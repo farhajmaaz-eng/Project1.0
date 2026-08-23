@@ -12,7 +12,7 @@
   <script>
     // Apply stored theme before first paint to avoid a flash.
     try {
-      var t = JSON.parse(localStorage.getItem('tessera.v1') || '{}');
+      var t = JSON.parse(localStorage.getItem('tessera.v2') || '{}');
       var pref = (t.settings && t.settings.theme) || 'dark';
       if (pref === 'system') {
         pref = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -24,9 +24,10 @@
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/ui.css" />
   <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/views.css" />
   <link rel="stylesheet" href="css/editor.css" />
+  <link rel="stylesheet" href="css/welcome.css" />
+  <link rel="stylesheet" href="css/ai.css" />
 </head>
 <body>
   <div id="app" aria-hidden="false">

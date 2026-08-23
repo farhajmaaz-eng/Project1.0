@@ -1,37 +1,64 @@
 /* ---------------------------------------------------------------------------
-   Tessera · store — single source of truth, persisted to localStorage.
-   No framework: views read `S()`, call mutators, then re-render themselves.
+   Tessera · store v2 — single source of truth, persisted to localStorage.
+   Starts EMPTY: no demo data. The workspace you get is the one you build.
 --------------------------------------------------------------------------- */
 
-import { buildSeed } from './seed.js';
-import { uid, todayISO } from './util.js';
+import { DEFAULT_MODEL } from './openrouter.js';
+import { uid } from './util.js';
 
-const KEY = 'tessera.v1';
+const KEY = 'tessera.v2';
 const listeners = new Set();
 
-let state;
-try {
-  state = JSON.parse(localStorage.getItem(KEY));
-} catch { /* corrupted — reseed below */ }
-
-if (!state || state.v !== 1) {
-  state = buildSeed();
-}
+let state = null;
+try { state = JSON.parse(localStorage.getItem(KEY)); } catch { /* reseed below */ }
+if (state && state.v !== 2) state = null;
 
 export const S = () => state;
 
+export function initStateFor({ name, email, workspace, prefix }) {
+  if (state) return;
+  state = {
+    v: 2,
+    settings: {
+      workspaceName: workspace || `${name.split(' ')[0]}'s workspace`,
+      keyPrefix: prefix || 'TSK',
+      theme: 'dark',
+      openrouterKey: '',
+    },
+    seq: 1,
+    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#d9a05b', you: true }],
+    labels: [
+      { id: 'bug', name: 'Bug', color: '#e5484d' },
+      { id: 'feature', name: 'Feature', color: '#4cb782' },
+      { id: 'design', name: 'Design', color: '#f2994a' },
+      { id: 'docs', name: 'Docs', color: '#9d7cd8' },
+      { id: 'infra', name: 'Infra', color: '#7b88a8' },
+    ],
+    statuses: [
+      { id: 'backlog', name: 'Backlog', color: '#75717d' },
+      { id: 'todo', name: 'Todo', color: '#98a0ae' },
+      { id: 'doing', name: 'In Progress', color: '#e2b93d' },
+      { id: 'review', name: 'In Review', color: '#9d7cd8' },
+      { id: 'done', name: 'Done', color: '#4cb782' },
+      { id: 'canceled', name: 'Canceled', color: '#5c5866' },
+    ],
+    priorities: ['urgent', 'high', 'medium', 'low', 'none'],
+    projects: [],
+    cycles: [],
+    issues: [],
+    docs: [],
+    recents: { issues: [], docs: [] },
+    ai: { model: DEFAULT_MODEL, useContext: true, thread: [], modelsCache: null },
+  };
+  persist();
+}
+
 export function persist() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch (e) {
-    console.warn('Tessera: could not save to localStorage', e);
-  }
+  if (!state) return;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('Tessera: could not save to localStorage', e); }
 }
-const save = debounceSave();
-function debounceSave() {
-  let t;
-  return () => { clearTimeout(t); t = setTimeout(persist, 180); };
-}
+const save = (() => { let t; return () => { clearTimeout(t); t = setTimeout(persist, 180); }; })();
 persist();
 
 export function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
@@ -42,30 +69,27 @@ export function emit() {
 
 /* ---------- lookups ---------- */
 
-export const you = () => state.members.find(m => m.id === state.settings.youId);
-export const member = (id) => state.members.find(m => m.id === id) || null;
-export const label = (id) => state.labels.find(l => l.id === id) || null;
-export const status = (id) => state.statuses.find(s => s.id === id) || state.statuses[0];
-export const project = (id) => state.projects.find(p => p.id === id) || null;
-export const cycle = (id) => state.cycles.find(c => c.id === id) || null;
-export const issueById = (id) => state.issues.find(i => i.id === id) || null;
-export const docById = (id) => state.docs.find(d => d.id === id) || null;
+export const you = () => state?.members.find(m => m.you) || null;
+export const member = (id) => state?.members.find(m => m.id === id) || null;
+export const label = (id) => state?.labels.find(l => l.id === id) || null;
+export const status = (id) => state ? (state.statuses.find(s => s.id === id) || state.statuses[0]) : null;
+export const project = (id) => state?.projects.find(p => p.id === id) || null;
+export const cycle = (id) => state?.cycles.find(c => c.id === id) || null;
+export const issueById = (id) => state?.issues.find(i => i.id === id) || null;
+export const docById = (id) => state?.docs.find(d => d.id === id) || null;
 
-export const issueRef = (iss) =>
-  `${state.settings.keyPrefix}-${iss.key}`;
+export const issueRef = (iss) => `${state.settings.keyPrefix}-${iss.key}`;
 
-export const activeCycle = () => {
-  const now = todayISO();
+export function activeCycle() {
+  if (!state) return null;
+  const now = new Date().toISOString().slice(0, 10);
   return state.cycles.find(c => c.startsAt <= now && c.endsAt >= now) || null;
-};
+}
 
 export function childrenDocs(pid) {
-  return state.docs.filter(d => d.parentId === pid)
-    .sort((a, b) => a.createdAt - b.createdAt);
+  return state.docs.filter(d => d.parentId === pid).sort((a, b) => a.createdAt - b.createdAt);
 }
-export function rootDocs() {
-  return childrenDocs(null);
-}
+export const rootDocs = () => childrenDocs(null);
 export function docPath(id) {
   const path = [];
   let cur = docById(id);
@@ -78,9 +102,7 @@ export function docSubtreeIds(id) {
   walk(id);
   return out;
 }
-export function hasKids(id) {
-  return state.docs.some(d => d.parentId === id);
-}
+export const hasKids = (id) => state.docs.some(d => d.parentId === id);
 
 /* ---------- queries ---------- */
 
@@ -96,13 +118,6 @@ export function filterIssues(opts = {}) {
   });
 }
 
-export function byStatusOrder(a, b) {
-  const sa = state.statuses.findIndex(s => s.id === a.status);
-  const sb = state.statuses.findIndex(s => s.id === b.status);
-  if (sa !== sb) return sa - sb;
-  return a.order - b.order;
-}
-
 export function groupIssues(list, key) {
   const groups = new Map();
   for (const iss of list) {
@@ -116,33 +131,26 @@ export function groupIssues(list, key) {
   return groups;
 }
 
-export function groupTitle(key, g) {
-  if (key === 'status') return status(g).name;
-  if (key === 'priority') return g[0].toUpperCase() + g.slice(1);
-  if (g === 'none') return 'Unassigned';
-  const m = member(g);
-  return m ? m.name : 'Unknown';
-}
-
 /* ---------- mutations ---------- */
 
-function nextKeyNum() { return state.seq++; }
+const nextKeyNum = () => state.seq++;
 
 export function logAct(issueId, text) {
   const iss = issueById(issueId);
   if (!iss) return;
-  iss.activity.push({ id: uid('a'), at: Date.now(), actorId: state.settings.youId, text });
+  iss.activity.push({ id: uid('a'), at: Date.now(), actorId: 'me', text });
   iss.updatedAt = Date.now();
 }
 
 export function createIssue(patch = {}) {
-  const maxOrder = Math.max(0, ...state.issues.filter(i => i.status === (patch.status || 'todo')).map(i => i.order));
+  const st = patch.status || 'todo';
+  const maxOrder = Math.max(0, ...state.issues.filter(i => i.status === st).map(i => i.order));
   const iss = {
     id: uid('i'), key: nextKeyNum(), title: '', blocks: [],
-    status: patch.status || 'todo', priority: 'none', assignee: null,
+    status: st, priority: 'none', assignee: null,
     labels: [], project: patch.project ?? null, cycle: patch.cycle ?? null,
     due: null, order: maxOrder + 10,
-    comments: [], activity: [{ id: uid('a'), at: Date.now(), actorId: state.settings.youId, text: 'created the issue' }],
+    comments: [], activity: [{ id: uid('a'), at: Date.now(), actorId: 'me', text: 'created the issue' }],
     createdAt: Date.now(), updatedAt: Date.now(),
     ...patch,
   };
@@ -160,26 +168,99 @@ export function updateIssue(id, patch, actText) {
   emit();
 }
 
-/** returns a snapshot for undo */
+/** returns a snapshot + original index for undo */
 export function deleteIssue(id) {
   const idx = state.issues.findIndex(i => i.id === id);
   if (idx === -1) return null;
   const [snap] = state.issues.splice(idx, 1);
   state.recents.issues = state.recents.issues.filter(x => x !== id);
   emit();
-  return snap;
+  return { snap, idx };
 }
 
-export function restoreIssueSnapshot(snap, atIndex = 0) {
-  state.issues.splice(atIndex, 0, snap);
+export function restoreIssue({ snap, idx }) {
+  state.issues.splice(Math.min(idx, state.issues.length), 0, snap);
   emit();
 }
 
 export function addComment(issueId, body) {
   const iss = issueById(issueId);
   if (!iss || !body.trim()) return;
-  iss.comments.push({ id: uid('c'), authorId: state.settings.youId, at: Date.now(), body: body.trim() });
+  iss.comments.push({ id: uid('c'), authorId: 'me', at: Date.now(), body: body.trim() });
   iss.updatedAt = Date.now();
+  emit();
+}
+
+/* projects */
+
+export function createProject(patch = {}) {
+  const p = {
+    id: uid('p'), icon: '📦', name: '', leadId: 'me',
+    statusId: 'doing', description: '',
+    ...patch,
+  };
+  state.projects.push(p);
+  emit();
+  return p;
+}
+export function updateProject(id, patch) {
+  const p = project(id);
+  if (!p) return;
+  Object.assign(p, patch);
+  emit();
+}
+/** detaches its issues rather than deleting them */
+export function deleteProject(id) {
+  state.projects = state.projects.filter(p => p.id !== id);
+  state.issues.forEach(i => { if (i.project === id) i.project = null; });
+  emit();
+}
+
+/* cycles */
+
+export function createCycle(patch = {}) {
+  const n = state.cycles.length + 1;
+  const c = {
+    id: uid('cy'), name: `Cycle ${n}`, goal: '',
+    startsAt: patch.startsAt || new Date().toISOString().slice(0, 10),
+    endsAt: patch.endsAt || '',
+    ...patch,
+  };
+  state.cycles.push(c);
+  state.cycles.sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1));
+  emit();
+  return c;
+}
+export function updateCycle(id, patch) {
+  const c = cycle(id);
+  if (!c) return;
+  Object.assign(c, patch);
+  state.cycles.sort((a, b) => (a.startsAt < b.startsAt ? -1 : 1));
+  emit();
+}
+export function deleteCycle(id) {
+  state.cycles = state.cycles.filter(c => c.id !== id);
+  state.issues.forEach(i => { if (i.cycle === id) i.cycle = null; });
+  emit();
+}
+
+/* labels */
+
+export function addLabel(name, color) {
+  const l = { id: uid('l'), name: name.trim() || 'Label', color };
+  state.labels.push(l);
+  emit();
+  return l;
+}
+export function updateLabel(id, patch) {
+  const l = label(id);
+  if (!l) return;
+  Object.assign(l, patch);
+  emit();
+}
+export function deleteLabel(id) {
+  state.labels = state.labels.filter(l => l.id !== id);
+  state.issues.forEach(i => { i.labels = i.labels.filter(x => x !== id); });
   emit();
 }
 
@@ -197,19 +278,15 @@ export function createDoc(patch = {}) {
   emit();
   return doc;
 }
-
 export function updateDoc(id, patch) {
   const d = docById(id);
   if (!d) return;
   Object.assign(d, patch, { updatedAt: Date.now() });
   emit();
 }
-
-/** deletes a doc and its subtree; returns snapshots array for undo */
 export function deleteDocTree(id) {
   const ids = docSubtreeIds(id);
   const snaps = [];
-  // capture original indices so undo can rebuild order roughly
   for (const did of ids) {
     const idx = state.docs.findIndex(d => d.id === did);
     if (idx > -1) snaps.push({ idx, doc: state.docs[idx] });
@@ -217,9 +294,8 @@ export function deleteDocTree(id) {
   state.docs = state.docs.filter(d => !ids.includes(d.id));
   state.recents.docs = state.recents.docs.filter(x => !ids.includes(x));
   emit();
-  return snaps.reverse(); // restore in reverse index order later
+  return snaps.reverse();
 }
-
 export function restoreDocs(snaps) {
   snaps.forEach(({ idx, doc }) => state.docs.splice(Math.min(idx, state.docs.length), 0, doc));
   emit();
@@ -240,16 +316,28 @@ export function setSetting(k, v) {
   emit();
 }
 
+export function setAI(patch) {
+  Object.assign(state.ai, patch);
+  emit();
+}
+
+export function pushMessage(role, content) {
+  state.ai.thread.push({ role, content, at: Date.now() });
+  if (state.ai.thread.length > 80) state.ai.thread.splice(0, state.ai.thread.length - 80);
+  emit();
+}
+
 export function resetAll() {
   localStorage.removeItem(KEY);
-  state = buildSeed();
-  persist();
   location.hash = '#/home';
   location.reload();
 }
 
+/** export without secrets */
 export function exportData() {
-  return JSON.stringify(state, null, 2);
+  const clone = JSON.parse(JSON.stringify(state));
+  delete clone.settings.openrouterKey;
+  return JSON.stringify(clone, null, 2);
 }
 
 export function importData(json) {
@@ -257,6 +345,8 @@ export function importData(json) {
   if (!next || typeof next !== 'object' || !Array.isArray(next.issues)) {
     throw new Error('Not a Tessera export');
   }
+  next.v = 2;
+  next.ai = next.ai || { model: DEFAULT_MODEL, useContext: true, thread: [] };
   state = next;
   persist();
   location.reload();

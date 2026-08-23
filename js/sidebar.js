@@ -1,11 +1,11 @@
 /* ---------------------------------------------------------------------------
-   Tessera · sidebar — brand, search, nav sections, doc tree, footer
+   Tessera · sidebar v2 — brand, search, collapsible sections, doc tree, footer
 --------------------------------------------------------------------------- */
 
 import { ico } from './icons.js';
 import { esc } from './util.js';
 import {
-  S, you, rootDocs, childrenDocs, activeCycle, hasKids,
+  S, you, activeCycle,
 } from './store.js';
 import { renderTree } from './doctree.js';
 import { openPalette } from './palette.js';
@@ -19,33 +19,52 @@ const logoSVG = `
   <rect x="17" y="17" width="12" height="12" rx="6" fill="#d9a05b"/>
 </svg>`;
 
+const collapsedSections = new Set();
+
+export function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.querySelector('.sb-scrim')?.remove();
+}
+
 export function renderSidebar() {
   const sb = document.getElementById('sidebar');
   const s = S();
+  if (!s) return;
   const route = location.hash || '#/home';
   const me = you();
-  const cyc = activeCycle();
 
-  const item = (href, icon, label, { count = '', on = false, extraHTML = '' } = {}) => `
+  const item = (href, icon, label, { count = '' } = {}) => `
     <button class="sb-item ${route === href || (href !== '#/home' && route.startsWith(href)) ? 'on' : ''}"
             data-nav="${href}">
       <span class="si-ic">${ico(icon, 15)}</span>
       <span class="si-label">${label}</span>
       ${count !== '' ? `<span class="si-count">${count}</span>` : ''}
-      ${extraHTML}
     </button>`;
 
   const openCount = s.issues.filter(i => !['done', 'canceled'].includes(i.status)).length;
-  const myOpen = s.issues.filter(i => i.assignee === me.id && !['done', 'canceled'].includes(i.status)).length;
+  const myOpen = s.issues.filter(i => i.assignee === 'me' && !['done', 'canceled'].includes(i.status)).length;
+  const cyc = activeCycle();
 
-  // favorites + roots for the docs section
-  const docsHostId = 'sb-doc-tree';
+  const section = (id, title, inner) => {
+    const isCollapsed = collapsedSections.has(id);
+    return `
+      <nav class="sb-section" data-section="${id}">
+        <div class="sb-head">
+          <button class="caps sb-fold" data-fold="${id}" style="display:flex;align-items:center;gap:5px">
+            <span class="sb-twist ${isCollapsed ? '' : 'open'}" style="width:14px;height:14px">${ico('chev', 10)}</span>
+            <span>${title}</span>
+          </button>
+          <button class="icon-btn" data-newdoc title="New page">${ico('plus', 13)}</button>
+        </div>
+        <div ${isCollapsed ? 'hidden' : ''}>${inner}</div>
+      </nav>`;
+  };
 
   sb.innerHTML = `
     <div class="sb-brand">
       ${logoSVG}
       <button class="sb-ws" data-home>${esc(s.settings.workspaceName)}</button>
-      <button class="icon-btn menu-btn-show" data-menu-toggle aria-label="Menu">${ico('x', 15)}</button>
+      <button class="icon-btn menu-btn-show" data-menu-toggle aria-label="Close menu">${ico('x', 15)}</button>
     </div>
 
     <button class="sb-search" data-search>
@@ -60,22 +79,16 @@ export function renderSidebar() {
         ${item('#/my', 'user', 'My issues', { count: myOpen || '' })}
         ${item('#/all', 'layers', 'All issues', { count: openCount })}
         ${item('#/board', 'board', 'Board')}
+        ${item('#/ai', 'sparkles', 'Assistant')}
       </nav>
 
-      <nav class="sb-section">
-        <div class="sb-head"><span class="caps">Planning</span></div>
+      ${section('planning', 'Planning', `
         ${item('#/cycles', 'target', 'Cycles')}
         ${cyc ? `<div style="padding:0 8px 2px"><span class="faint small mono" style="display:block;padding-left:24px">${esc(cyc.name)} · ends soon</span></div>` : ''}
         ${item('#/projects', 'zap', 'Projects')}
-      </nav>
+      `)}
 
-      <nav class="sb-section sb-tree">
-        <div class="sb-head">
-          <span class="caps">Docs</span>
-          <button class="icon-btn" data-newdoc title="New page">${ico('plus', 13)}</button>
-        </div>
-        <div id="${docsHostId}"></div>
-      </nav>
+      ${section('docs', 'Docs', `<div id="sb-doc-tree"></div>`)}
     </div>
 
     <footer class="sb-foot">
@@ -90,41 +103,45 @@ export function renderSidebar() {
 
   sb.querySelector('[data-home]').onclick = () => nav('#/home');
   sb.querySelector('[data-search]').onclick = () => openPalette();
-  sb.querySelector('[data-newdoc]').onclick = () =>
-    import('./views/docs.js').then(m => m.createAndOpenPage());
+  sb.querySelectorAll('[data-newdoc]').forEach((b) =>
+    b.onclick = () => import('./views/docs.js').then(m => m.createAndOpenPage()));
   sb.querySelectorAll('[data-nav]').forEach((b) =>
-    b.onclick = () => { nav(b.dataset.nav); sb.classList.remove('open'); });
-  sb.querySelector('[data-settings]').onclick = () => nav('#/settings');
-  sb.querySelector('[data-theme]').onclick = () =>
-    import('./main.js').then(m => m.cycleTheme());
-  sb.querySelector('[data-me]').onclick = () => nav('#/settings');
-  sb.querySelector('[data-menu-toggle]').onclick = () => sb.classList.remove('open');
+    b.onclick = () => { nav(b.dataset.nav); closeSidebar(); });
+  sb.querySelector('[data-settings]').onclick = () => { nav('#/settings'); closeSidebar(); };
+  sb.querySelector('[data-theme]').onclick = () => import('./main.js').then(m => m.cycleTheme());
+  sb.querySelector('[data-me]').onclick = () => { nav('#/settings'); closeSidebar(); };
+  sb.querySelector('[data-menu-toggle]').onclick = closeSidebar;
 
-  const treeHost = sb.querySelector(`#${docsHostId}`);
-  const favs = s.docs.filter(d => d.favorite);
-  let html = '';
-  if (favs.length) {
-    html += favs.map(d => `
-      <button class="sb-item ${route === `#/doc/${d.id}` ? 'on' : ''}" data-doc="${d.id}" style="height:28px;font-size:13px">
-        <span class="sb-twist leaf">${ico('chev', 11)}</span>
-        <span class="sb-doc-icon">${d.icon}</span>
-        <span class="si-label">${esc(d.title || 'Untitled')}</span>
-      </button>`).join('');
-  }
-  html += '<div data-subtree></div>';
-  treeHost.innerHTML = html;
-  renderTree(treeHost.querySelector('[data-subtree]'), {
-    activeId: route.startsWith('#/doc/') ? route.split('/')[2] : null,
-    compact: true,
-  });
-  treeHost.querySelectorAll('[data-subtree] [data-doc-id]').forEach((row) => {
-    row.onclick = (e) => {
-      if (e.target.closest('[data-twist], [data-more]')) return;
-      nav(`#/doc/${row.dataset.docId}`);
-      sb.classList.remove('open');
+  sb.querySelectorAll('[data-fold]').forEach((b) => {
+    b.onclick = () => {
+      const id = b.dataset.fold;
+      collapsedSections.has(id) ? collapsedSections.delete(id) : collapsedSections.add(id);
+      renderSidebar();
     };
   });
-  treeHost.querySelectorAll('[data-doc]').forEach((b) => {
-    b.onclick = () => { nav(`#/doc/${b.dataset.doc}`); sb.classList.remove('open'); };
+
+  const treeHost = sb.querySelector('#sb-doc-tree');
+  if (treeHost) {
+    renderTree(treeHost, {
+      activeId: route.startsWith('#/doc/') ? route.split('/')[2] : null,
+      compact: true,
+    });
+    treeHost.querySelectorAll('[data-doc-id]').forEach((row) => {
+      row.onclick = (e) => {
+        if (e.target.closest('[data-twist], [data-more]')) return;
+        nav(`#/doc/${row.dataset.docId}`);
+        closeSidebar();
+      };
+    });
+  }
+}
+
+export function wireSidebarScrim() {
+  document.addEventListener('pointerdown', (e) => {
+    if (!document.getElementById('sidebar')?.classList.contains('open')) return;
+    const sb = document.getElementById('sidebar');
+    if (sb.contains(e.target)) return;
+    if (e.target.closest('.menu, .modal, .drawer')) return;
+    closeSidebar();
   });
 }

@@ -25,6 +25,23 @@ export function debounce(fn, ms) {
 
 export const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 
+/** animate a number into an element (skipped under reduced motion) */
+export function countUp(el, target, ms = 550) {
+  if (!el) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || target <= 0) { el.textContent = String(target); return; }
+  const t0 = performance.now();
+  const tick = (t) => {
+    const p = Math.min(1, (t - t0) / ms);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = String(Math.round(target * eased));
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
 /* ---------- dates ---------- */
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

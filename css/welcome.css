@@ -1,0 +1,108 @@
+/* ---------------------------------------------------------------------------
+   Tessera · welcome — sign up / sign in (all local, no server)
+--------------------------------------------------------------------------- */
+
+.welcome {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  background:
+    radial-gradient(1100px 500px at 78% -10%, var(--accent-faint), transparent 60%),
+    var(--bg);
+}
+@media (max-width: 880px) {
+  .welcome { grid-template-columns: 1fr; }
+  .wl-pitch { display: none; }
+}
+
+/* left pitch */
+.wl-pitch {
+  padding: 7vh 6vw;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--line);
+}
+.wl-brand { display: flex; align-items: center; gap: 11px; }
+.wl-logo { width: 30px; height: 30px; }
+.wl-brand b { font-family: var(--serif); font-weight: 520; font-size: 18px; letter-spacing: .01em; }
+
+.wl-hero { margin: auto 0; max-width: 480px; }
+.wl-hero h1 {
+  font-family: var(--serif); font-weight: 460;
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: 1.14; letter-spacing: -.015em;
+}
+.wl-hero h1 em { font-style: italic; color: var(--accent); font-weight: 430; }
+.wl-hero > p { color: var(--text-2); font-size: 14.5px; line-height: 1.65; margin-top: 16px; max-width: 40ch; }
+
+.wl-points { margin-top: 30px; display: flex; flex-direction: column; gap: 13px; }
+.wl-point { display: flex; gap: 12px; align-items: flex-start; animation: rise .55s var(--ease-out) backwards; }
+.wl-point:nth-child(1) { animation-delay: .15s; }
+.wl-point:nth-child(2) { animation-delay: .25s; }
+.wl-point:nth-child(3) { animation-delay: .35s; }
+.wl-point .wp-ic {
+  width: 28px; height: 28px; flex: none;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--accent);
+}
+.wl-point b { display: block; font-size: 13.5px; font-weight: 600; }
+.wl-point span { font-size: 12.5px; color: var(--text-3); line-height: 1.5; }
+
+.wl-foot { color: var(--text-3); font-size: 11px; }
+
+/* tile motif */
+.wl-tiles {
+  position: absolute; right: -20px; top: -30px;
+  opacity: .5; pointer-events: none;
+}
+
+/* right form */
+.wl-form-pane {
+  display: flex; align-items: center; justify-content: center;
+  padding: 5vh 24px;
+}
+.wl-card {
+  width: min(400px, 100%);
+  animation: rise .5s var(--ease-out) backwards .08s;
+}
+.wl-card h2 {
+  font-family: var(--serif); font-weight: 500; font-size: 23px; letter-spacing: -.01em;
+}
+.wl-card .wl-sub { color: var(--text-3); font-size: 13px; margin-top: 5px; }
+
+.wl-fields { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
+.wl-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.wl-field .input { height: 38px; border-radius: 9px; background: var(--bg-2); }
+.wl-field .input:focus { background: var(--surface); }
+
+.wl-error {
+  display: none;
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-radius: 9px;
+  font-size: 12.5px;
+  padding: 9px 12px;
+  animation: shake .4s var(--ease);
+}
+.wl-error.show { display: block; }
+@keyframes shake {
+  20% { translate: -5px 0; } 40% { translate: 5px 0; } 60% { translate: -3px 0; } 80% { translate: 2px 0; }
+}
+
+.wl-submit { width: 100%; margin-top: 22px; height: 40px; border-radius: 10px; font-size: 14px; }
+.wl-switch { text-align: center; margin-top: 18px; font-size: 12.5px; color: var(--text-3); }
+.wl-switch button { color: var(--accent); font-weight: 600; }
+.wl-switch button:hover { text-decoration: underline; }
+
+.wl-note {
+  margin-top: 26px;
+  font-size: 11.5px; color: var(--text-3);
+  line-height: 1.6;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 13px;
+}
+.wl-btn-loading { pointer-events: none; opacity: .75; }
