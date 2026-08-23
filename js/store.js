@@ -61,6 +61,14 @@ export function persist() {
 const save = (() => { let t; return () => { clearTimeout(t); t = setTimeout(persist, 180); }; })();
 persist();
 
+/* Never lose writes: flush to disk when the tab hides or closes. The
+   debounced save alone loses data if the tab dies within its 180ms window —
+   this is exactly how an API key could appear to "not stick". */
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') persist(); });
+  window.addEventListener('pagehide', persist);
+}
+
 export function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 export function emit() {
   save();
@@ -91,9 +99,11 @@ export function activeCycle() {
 }
 
 export function childrenDocs(pid) {
-  return state.docs.filter(d => d.parentId === pid).sort((a, b) => a.createdAt - b.createdAt);
+  return state.docs.filter(d => d.parentId === pid && !d.trashed).sort((a, b) => a.createdAt - b.createdAt);
 }
 export const rootDocs = () => childrenDocs(null);
+export const trashedDocs = () =>
+  state.docs.filter(d => d.trashed).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 export function docPath(id) {
   const path = [];
   let cur = docById(id);
@@ -290,7 +300,8 @@ export function createDoc(patch = {}) {
   const doc = {
     id: uid('d'), icon: '📄', title: '', parentId: null,
     blocks: [{ id: uid('b'), type: 'p', html: '', indent: 0 }],
-    favorite: false, createdAt: Date.now(), updatedAt: Date.now(),
+    favorite: false, cover: '', trashed: false,
+    createdAt: Date.now(), updatedAt: Date.now(),
     ...patch,
   };
   state.docs.push(doc);
@@ -304,20 +315,46 @@ export function updateDoc(id, patch) {
   Object.assign(d, patch, { updatedAt: Date.now() });
   emit();
 }
+/** moves a page + its subtree to the trash (recoverable) */
 export function deleteDocTree(id) {
-  const ids = docSubtreeIds(id);
+  const ids = new Set(docSubtreeIds(id));
   const snaps = [];
-  for (const did of ids) {
-    const idx = state.docs.findIndex(d => d.id === did);
-    if (idx > -1) snaps.push({ idx, doc: state.docs[idx] });
-  }
-  state.docs = state.docs.filter(d => !ids.includes(d.id));
-  state.recents.docs = state.recents.docs.filter(x => !ids.includes(x));
+  state.docs.forEach((d, idx) => {
+    if (ids.has(d.id)) { d.trashed = true; d.trashedAt = Date.now(); snaps.push({ idx, doc: d }); }
+  });
+  state.recents.docs = state.recents.docs.filter(x => !ids.has(x));
   emit();
-  return snaps.reverse();
+  return snaps;
+}
+
+export function restoreTrashed(id) {
+  const ids = new Set(docSubtreeIds(id));
+  state.docs.forEach(d => { if (ids.has(d.id)) { d.trashed = false; delete d.trashedAt; } });
+  emit();
+}
+
+export function purgeDoc(id) {
+  const ids = new Set(docSubtreeIds(id));
+  // only purge when every member is already trashed
+  if (!state.docs.filter(d => ids.has(d.id)).every(d => d.trashed)) return false;
+  state.docs = state.docs.filter(d => !ids.has(d.id));
+  emit();
+  return true;
+}
+
+export function emptyTrash() {
+  const roots = state.docs.filter(d =>
+    d.trashed && (!d.parentId || !state.docs.find(x => x.id === d.parentId)?.trashed));
+  const ids = new Set();
+  roots.forEach(r => docSubtreeIds(r.id).forEach(i => ids.add(i)));
+  state.docs = state.docs.filter(d => !ids.has(d.id));
+  emit();
 }
 export function restoreDocs(snaps) {
-  snaps.forEach(({ idx, doc }) => state.docs.splice(Math.min(idx, state.docs.length), 0, doc));
+  snaps.forEach(({ doc }) => {
+    const d = docById(doc.id);
+    if (d) { d.trashed = false; delete d.trashedAt; }
+  });
   emit();
 }
 
@@ -334,6 +371,9 @@ export function touchRecent(kind, id) {
 export function setSetting(k, v) {
   state.settings[k] = v;
   emit();
+  if (k === 'openrouterKey' || k === 'workspaceName' || k === 'keyPrefix') {
+    persist(); // credentials & identity: write-through, never wait on the debounce
+  }
 }
 
 export function setAI(patch) {

@@ -1,17 +1,20 @@
 /* ---------------------------------------------------------------------------
-   Tessera · editor — a small block editor used by docs and issue descriptions.
+   Tessera · editor v2 — block editor used by docs and issue descriptions.
 
-   Supported blocks: p, h1, h2, h3, ul, ol, todo, quote, callout, code,
-   divider. Markdown shortcuts on space, "/" command menu, tab indents,
-   enter-splitting, backspace merging, arrow-key flow between blocks.
+   Blocks: p, h1, h2, h3, ul, ol, todo, quote, callout, code, divider,
+   toggle, table, image. Markdown shortcuts, "/" command menu, tab indents
+   (nest anything under a toggle), enter-splitting, backspace merging/outdent,
+   arrow flow, ⌘B/I/U/E, and a block-handle menu (turn into / move / dup /
+   delete).
 --------------------------------------------------------------------------- */
 
 import { uid, esc, debounce, getCaretOffset, setCaretOffset, placeCaretEnd, caretRect, clamp, cleanInline } from './util.js';
 import { ico } from './icons.js';
-import { closeAllMenus } from './ui.js';
+import { openMenu } from './ui.js';
 
 const LISTY = new Set(['ul', 'ol', 'todo']);
 const HEADS = { '#': 'h1', '##': 'h2', '###': 'h3' };
+const NO_INDENT = new Set(['code', 'divider', 'image', 'table']);
 
 const SLASH_ITEMS = [
   { t: 'p', label: 'Text', desc: 'Plain paragraph', icon: 'type' },
@@ -21,9 +24,12 @@ const SLASH_ITEMS = [
   { t: 'ul', label: 'Bulleted list', desc: 'Simple bullet list', icon: 'listUl' },
   { t: 'ol', label: 'Numbered list', desc: 'Ordered list', icon: 'listOl' },
   { t: 'todo', label: 'To-do', desc: 'Track tasks with checkboxes', icon: 'sqCheck' },
+  { t: 'toggle', label: 'Toggle', desc: 'Collapsible section', icon: 'chev' },
+  { t: 'table', label: 'Table', desc: 'Editable grid', icon: 'board' },
   { t: 'quote', label: 'Quote', desc: 'Capture a quotation', icon: 'quote' },
   { t: 'callout', label: 'Callout', desc: 'Make it stand out', icon: 'zap' },
   { t: 'code', label: 'Code', desc: 'Monospaced block', icon: 'codeIc' },
+  { t: 'image', label: 'Image', desc: 'Embed from a URL', icon: 'doc' },
   { t: 'divider', label: 'Divider', desc: 'Visual separator', icon: 'minus' },
 ];
 
@@ -35,15 +41,17 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   let model = blocks.map(b => ({ ...b }));
   let focusId = null;
   let focusOff = 0;
-  let destroyed = false;
 
   /* ---------- persistence ---------- */
   const pushOut = debounce(() => {
     onChange(model.map(b => ({ ...b })));
   }, 420);
 
+  function onChangeImmediate() { pushOut.cancel(); onChange(model.map(b => ({ ...b }))); }
+
   const syncBlockEl = (el) => {
-    const b = model.find(x => x.id === el.closest('.blk')?.dataset.id);
+    const blkEl = el.closest?.('.blk');
+    const b = model.find(x => x.id === blkEl?.dataset.id);
     const bled = el.classList?.contains('bled') ? el : el.querySelector('.bled');
     if (b && bled) {
       b.html = bled.innerHTML;
@@ -52,88 +60,220 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     pushOut();
   };
 
+  /* ---------- helpers ---------- */
+
+  const bledOf = (id) =>
+    root.querySelector(`.blk[data-id="${id}"] > .bled, .blk[data-id="${id}"] > div > .bled`);
+
+  const isBlank = (html) =>
+    !html || /^(\s|<br\s*\/?>)*$/i.test(String(html).replace(/&nbsp;/g, ' '));
+
+  /** ids hidden because an ancestor toggle above them is collapsed */
+  function computeHidden() {
+    const hidden = new Set();
+    const stack = []; // {indent} of open+collapsed toggles
+    for (const b of model) {
+      while (stack.length && stack[stack.length - 1] >= b.indent) stack.pop();
+      const covered = stack.length > 0;
+      if (covered) hidden.add(b.id);
+      if (b.type === 'toggle' && b.collapsed && !covered) stack.push(b.indent ?? 0);
+    }
+    return hidden;
+  }
+
   /* ---------- rendering ---------- */
 
   function blockChrome(b) {
     switch (b.type) {
       case 'todo':
         return `<input type="checkbox" tabindex="-1" ${b.checked ? 'checked' : ''} aria-label="Toggle task">`;
+      case 'toggle':
+        return `<button class="tg-chevron ${b.collapsed ? 'closed' : ''}" tabindex="-1" aria-label="Toggle section">${ico('chev', 12)}</button>`;
       case 'ul':
         return '<span ul-marker></span>';
       case 'ol':
         return '<span ol-marker></span>';
       case 'callout':
         return `<span class="co-icon">${b.icon || '💡'}</span>`;
-      case 'code':
-        return `<span class="code-lang">code</span>`;
       case 'divider':
+        return '';
+      case 'image':
         return '';
       default:
         return '';
     }
   }
 
+  function buildEditable(blk, b, i) {
+    const ed = document.createElement('div');
+    ed.className = 'bled';
+    ed.contentEditable = 'true';
+    ed.spellcheck = true;
+    ed.innerHTML = b.html || '';
+    if (isBlank(b.html)) ed.classList.add('blank');
+
+    let showPh = '';
+    if (i === 0 && isBlank(b.html)) showPh = placeholder || "Write something, or press '/' for commands";
+    else if (b.type === 'toggle') showPh = isBlank(b.html) ? 'Toggle title' : '';
+    else if (LISTY.has(b.type) && isBlank(b.html)) showPh = 'List item';
+    else if (b.type === 'image') showPh = isBlank(b.html) ? 'Write a caption…' : '';
+    if (showPh) blk.dataset.ph = showPh;
+    blk.appendChild(ed);
+    return ed;
+  }
+
+  function buildTable(blk, b) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tbl-wrap';
+    const rows = b.rows?.length ? b.rows : [['', ''], ['', ''], ['', '']];
+    const table = document.createElement('table');
+    table.className = 'btbl';
+    rows.forEach((r, ri) => {
+      const tr = document.createElement('tr');
+      r.forEach((c, ci) => {
+        const td = document.createElement(ri === 0 ? 'th' : 'td');
+        td.className = 'tcell';
+        td.contentEditable = 'true';
+        td.dataset.r = ri;
+        td.dataset.c = ci;
+        td.innerHTML = c || '';
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+    wrap.appendChild(table);
+
+    const tools = document.createElement('span');
+    tools.className = 'tbl-tools';
+    tools.innerHTML = `
+      <button data-t="r+" title="Add row">${ico('plus', 11)}</button>
+      <button data-t="c+" title="Add column">${ico('plus', 11)}</button>
+      <button data-t="r-" title="Delete row">${ico('minus', 11)}</button>
+      <button data-t="c-" title="Delete column">${ico('minus', 11)}</button>`;
+    wrap.appendChild(tools);
+
+    blk.appendChild(wrap);
+
+    tools.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-t]');
+      if (!btn) return;
+      e.stopPropagation();
+      const t = btn.dataset.t;
+      if (t === 'r+') b.rows.push(new Array(b.rows[0].length).fill(''));
+      if (t === 'c+') b.rows.forEach(r => r.push(''));
+      if (t === 'r-' && b.rows.length > 1) b.rows.pop();
+      if (t === 'c-' && b.rows[0].length > 1) b.rows.forEach(r => r.pop());
+      render(); pushOut();
+    });
+
+    // keep model in sync while typing in any cell
+    wrap.addEventListener('input', (e) => {
+      if (!e.target.classList?.contains('tcell')) return;
+      const r = +e.target.dataset.r, c = +e.target.dataset.c;
+      if (b.rows[r]) b.rows[r][c] = e.target.innerHTML;
+      pushOut();
+    });
+    wrap.addEventListener('keydown', (e) => {
+      if (!e.target.classList?.contains('tcell')) return;
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const cells = [...wrap.querySelectorAll('.tcell')];
+        const i = cells.indexOf(e.target);
+        const next = cells[e.key === 'Tab' && !e.shiftKey ? i + 1 : i - 1];
+        if (next) { next.focus(); placeCaretEnd(next); }
+      }
+      if (e.key === 'Enter' && !e.shiftKey) e.preventDefault();
+    });
+    wrap.addEventListener('paste', (e) => {
+      if (!e.target.classList?.contains('tcell')) return;
+      e.preventDefault();
+      const text = (e.clipboardData.getData('text/plain') || '').replace(/\n+/g, ' ');
+      document.execCommand('insertText', false, text);
+    });
+  }
+
+  function buildImage(blk, b) {
+    const wrap = document.createElement('div');
+    wrap.className = 'img-wrap';
+    if (b.src) {
+      const img = document.createElement('img');
+      img.src = b.src;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = () => wrap.classList.add('img-broken');
+      wrap.appendChild(img);
+    } else {
+      wrap.classList.add('img-broken');
+    }
+    blk.appendChild(wrap);
+  }
+
   function render() {
+    const hidden = computeHidden();
     root.innerHTML = '';
+
     model.forEach((b, i) => {
       const blk = document.createElement('div');
-      blk.className = `blk t-${b.type}` + (b.type === 'todo' && b.checked ? ' checked' : '');
+      blk.className = `blk t-${b.type}` +
+        (b.type === 'todo' && b.checked ? ' checked' : '') +
+        (hidden.has(b.id) ? ' blk-hidden' : '');
       blk.dataset.id = b.id;
       if (b.indent) blk.setAttribute('indent', String(b.indent));
 
+      const grip = document.createElement('button');
+      grip.className = 'blk-grip';
+      grip.title = 'Click to edit block · drag not needed';
+      grip.innerHTML = ico('dots', 13);
+      grip.tabIndex = -1;
+      grip.addEventListener('click', (e) => { e.stopPropagation(); blockMenu(grip, b); });
+      blk.appendChild(grip);
+
       if (b.type === 'divider') {
-        blk.innerHTML = '<hr>';
+        blk.insertAdjacentHTML('beforeend', '<hr>');
+        root.appendChild(blk);
+        return;
+      }
+      if (b.type === 'table') {
+        buildTable(blk, b);
         root.appendChild(blk);
         return;
       }
 
-      blk.innerHTML = blockChrome(b);
-      const ed = document.createElement('div');
-      ed.className = 'bled';
-      ed.contentEditable = 'true';
-      ed.spellcheck = true;
-      ed.innerHTML = b.html;
-      if (isBlank(b.html)) ed.classList.add('blank');
+      blk.insertAdjacentHTML('beforeend', blockChrome(b));
 
-      const showPh =
-        i === 0 && isBlank(b.html)
-          ? (placeholder || "Write something, or press '/' for commands")
-          : LISTY.has(b.type) && isBlank(b.html) ? 'List item'
-          : b.type === 'code' ? ''
-          : '';
-      if (showPh) blk.dataset.ph = showPh;
-
-      if (b.type === 'callout' || b.type === 'code') {
-        const wrap = document.createElement('div');
-        wrap.style.flex = '1';
-        wrap.appendChild(ed);
-        blk.appendChild(wrap);
+      if (b.type === 'image') {
+        buildImage(blk, b);
+        const cap = buildEditable(blk, b, -1);
+        void cap;
+      } else if (b.type === 'callout' || b.type === 'code') {
+        const wrapDiv = document.createElement('div');
+        wrapDiv.style.flex = '1';
+        if (b.type === 'code') wrapDiv.insertAdjacentHTML('afterbegin', '<span class="code-lang">code</span>');
+        blk.querySelector('.co-icon') ? blk.appendChild(wrapDiv) : blk.appendChild(wrapDiv);
+        wrapDiv.appendChild(buildEditable(blk, b, -1));
       } else {
-        blk.appendChild(ed);
+        blk.appendChild(buildEditable(blk, b, i));
       }
+
       root.appendChild(blk);
     });
 
     if (focusId) {
       const el = bledOf(focusId);
-      if (el) {
+      if (el && !el.closest('.blk-hidden')) {
         el.focus();
         try { setCaretOffset(el, focusOff); } catch { placeCaretEnd(el); }
-        // scroll into view gently
         el.scrollIntoView({ block: 'nearest' });
       }
       focusId = null;
     } else if (autoFocus && model.length) {
-      const first = root.querySelector('.bled');
-      first?.focus();
+      root.querySelector('.blk:not(.blk-hidden) .bled')?.focus();
     }
   }
 
-  const bledOf = (id) => root.querySelector(`.blk[data-id="${id}"] > .bled, .blk[data-id="${id}"] > div > .bled`);
-
   /* ---------- slash menu ---------- */
 
-  let slash = null; // { id, baseOff, query }
+  let slash = null;   // { id, baseOff, query }
   let slashEl = null;
   let slashSel = 0;
 
@@ -179,9 +319,16 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     });
   }
 
-  function slashFilteredItems() {
+  const slashFilteredItems = () => {
     const q = (slash?.query || '').toLowerCase().trim();
     return SLASH_ITEMS.filter(it => !q || it.label.toLowerCase().includes(q) || it.t.includes(q));
+  };
+
+  function closeSlash() {
+    slash = null;
+    slashEl?.remove();
+    slashEl = null;
+    slashSel = 0;
   }
 
   function applySlash(type) {
@@ -191,7 +338,6 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     closeSlash();
     if (!b) return;
 
-    // strip the "/query" text the user typed
     const bled = bledOf(id);
     if (bled) {
       const txt = bled.textContent;
@@ -211,6 +357,21 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
         model.splice(idx + 1, 0, { id: uid('b'), type: 'divider', html: '', indent: 0 });
         focusNextAfter(id, 0);
       }
+    } else if (type === 'image') {
+      promptForImageUrl((url) => {
+        if (!url) return;
+        const idx = model.findIndex(x => x.id === id);
+        const imgBlk = { id: uid('b'), type: 'image', html: '', src: url, indent: 0 };
+        if (isBlank(b.html)) model.splice(idx, 1, imgBlk);
+        else model.splice(idx + 1, 0, imgBlk);
+        focusId = null;
+        render(); pushOut(); onChangeImmediate();
+      });
+      return; // re-render happens after the modal resolves
+    } else if (type === 'table') {
+      b.type = 'table';
+      b.rows = [['', ''], ['', ''], ['', '']];
+      focusId = null;
     } else {
       b.type = type;
       if (type !== 'callout') delete b.icon;
@@ -219,25 +380,101 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     render(); pushOut(); onChangeImmediate();
   }
 
-  function closeSlash() {
-    slash = null;
-    slashEl?.remove();
-    slashEl = null;
-    slashSel = 0;
+  function promptForImageUrl(cb) {
+    import('./ui.js').then(({ openModal }) => {
+      openModal((modal, close) => {
+        modal.innerHTML = `
+          <div class="modal-head" style="padding-bottom:10px">
+            ${ico('doc', 15)}<span class="caps">Embed image</span>
+          </div>
+          <div style="padding:6px 18px">
+            <input class="input" data-url placeholder="https://…/picture.jpg"
+              style="height:38px;border-radius:10px;font-size:13px" spellcheck="false"/>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 16px">
+            <button class="btn ghost" data-x>Cancel</button>
+            <button class="btn primary" data-ok disabled>Embed</button>
+          </div>`;
+        const inp = modal.querySelector('[data-url]');
+        const ok = modal.querySelector('[data-ok]');
+        setTimeout(() => inp.focus(), 40);
+        inp.addEventListener('input', () => { ok.disabled = !inp.value.trim(); });
+        const done = () => { const v = inp.value.trim(); close(); cb(v); };
+        ok.onclick = done;
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && inp.value.trim()) done();
+        });
+        modal.querySelector('[data-x]').onclick = close;
+      }, { width: 480 });
+    });
   }
 
-  function onChangeImmediate() { pushOut.cancel(); onChange(model.map(b => ({ ...b }))); }
+  /* ---------- block handle menu ---------- */
+
+  function blockMenu(anchor, b) {
+    const idx = model.findIndex(x => x.id === b.id);
+    const canTurnInto = !['image'].includes(b.type);
+    const items = [];
+    if (canTurnInto) {
+      items.push({ header: 'Turn into' });
+      for (const it of SLASH_ITEMS.filter(x => !['image', 'table', 'divider'].includes(x.t))) {
+        items.push({ value: 'into:' + it.t, label: it.label, icon: ico(it.icon, 13), checked: b.type === it.t });
+      }
+      items.push({ sep: true });
+    }
+    items.push(
+      { value: 'dup', label: 'Duplicate', icon: ico('copy', 14) },
+      { value: 'up', label: 'Move up', icon: ico('up', 14) },
+      { value: 'down', label: 'Move down', icon: ico('down', 14) },
+      { sep: true },
+      { value: 'del', label: 'Delete', icon: ico('trash', 14), danger: true },
+    );
+
+    openMenu({
+      anchor, minWidth: 190,
+      onSelect: (v) => {
+        const i = model.findIndex(x => x.id === b.id);
+        if (v.startsWith('into:')) {
+          const t = v.slice(5);
+          if (b.type === 'table' && t !== 'table') delete b.rows;
+          if (t === 'toggle') b.collapsed = false;
+          if (b.type === 'table') { b.type = t; b.html = ''; delete b.rows; }
+          else b.type = t;
+          if (t === 'todo') b.checked = !!b.checked;
+          focusId = b.id; focusOff = 0;
+        }
+        if (v === 'dup') {
+          const copy = JSON.parse(JSON.stringify(b));
+          copy.id = uid('b');
+          model.splice(i + 1, 0, copy);
+          focusId = copy.id; focusOff = 99999;
+        }
+        if (v === 'up' && i > 0) {
+          model.splice(i - 1, 0, model.splice(i, 1)[0]);
+          focusId = b.id; focusOff = 99999;
+        }
+        if (v === 'down' && i < model.length - 1) {
+          model.splice(i + 1, 0, model.splice(i, 1)[0]);
+          focusId = b.id; focusOff = 0;
+        }
+        if (v === 'del') {
+          model.splice(i, 1);
+          if (!model.some(x => x.type !== 'divider')) {
+            model.unshift({ id: uid('b'), type: 'p', html: '', indent: 0 });
+          }
+          const nxt = model[i] || model[model.length - 1];
+          focusId = nxt?.id ?? null; focusOff = 0;
+        }
+        render(); pushOut(); onChangeImmediate();
+      },
+    });
+  }
 
   /* ---------- editing operations ---------- */
 
   const curBlkEl = (node) => node.closest?.('.blk');
   const curBled = (node) =>
-    node.closest?.('.bled') ||
-    curBlkEl(node)?.querySelector('.bled');
-
-  function isBlank(html) {
-    return !html || /^(\s|<br\s*\/?>)*$/i.test(html.replace(/&nbsp;/g, ' '));
-  }
+    node.closest?.('.bled') || curBlkEl(node)?.querySelector('.bled');
 
   function focusNextAfter(id, off) {
     const idx = model.findIndex(b => b.id === id);
@@ -248,6 +485,7 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   function setType(b, type) {
     b.type = type;
     if (type !== 'todo') delete b.checked;
+    if (type === 'toggle') b.collapsed = false;
   }
 
   /** markdown shortcut fired on Space */
@@ -280,8 +518,17 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     const after = text.slice(off);
     const idx = model.findIndex(x => x.id === b.id);
 
+    // Enter at the end of a toggle title creates a child inside it
+    if (b.type === 'toggle' && off >= text.length) {
+      b.html = before;
+      model.splice(idx + 1, 0, { id: uid('b'), type: 'p', html: '', indent: (b.indent || 0) + 1 });
+      focusId = model[idx + 1].id; focusOff = 0;
+      render(); pushOut();
+      return;
+    }
+
     b.html = before;
-    const carry = ['ul', 'ol', 'todo', 'quote'].includes(b.type) ? b.type : 'p';
+    const carry = LISTY.has(b.type) ? b.type : 'p';
     const nb = { id: uid('b'), type: carry, html: esc(after), indent: b.indent };
     if (carry === 'todo') nb.checked = false;
     model.splice(idx + 1, 0, nb);
@@ -292,15 +539,14 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   function mergeBack(b, bled) {
     const idx = model.findIndex(x => x.id === b.id);
     if (idx === 0) {
-      if (LISTY.has(b.type)) { setType(b, 'p'); focusId = b.id; render(); pushOut(); }
+      if (b.type !== 'p' && !NO_INDENT.has(b.type)) { setType(b, 'p'); focusId = b.id; render(); pushOut(); }
       return;
     }
     const prev = model[idx - 1];
-    if (prev.type === 'divider') {
+    if (prev.type === 'divider' || prev.type === 'image' || prev.type === 'table') {
       model.splice(idx - 1, 1); focusId = b.id; focusOff = 0; render(); pushOut(); return;
     }
     if (LISTY.has(b.type)) {
-      // first turn into paragraph semantics: outdent then merge
       setType(b, 'p');
       render();
       return;
@@ -319,8 +565,8 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   }
 
   function indent(b, dir) {
-    if (!LISTY.has(b.type)) return false;
-    const next = clamp((b.indent || 0) + dir, 0, 2);
+    if (NO_INDENT.has(b.type)) return false;
+    const next = clamp((b.indent || 0) + dir, 0, 3);
     if (next === b.indent) return false;
     b.indent = next;
     render(); pushOut();
@@ -330,9 +576,9 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   /* ---------- events ---------- */
 
   root.addEventListener('input', (e) => {
+    if (e.target.classList?.contains('tcell')) return; // tables handle themselves
     const bled = curBled(e.target);
     if (!bled) return;
-    syncBlockEl(bled);
     syncBlockEl(bled);
     if (slash) {
       const off = getCaretOffset(bled) ?? bled.textContent.length;
@@ -347,8 +593,8 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
 
   root.addEventListener('keydown', (e) => {
     if (e.isComposing) return;
+    if (e.target.classList?.contains('tcell')) return; // table nav handled locally
 
-    // slash menu keyboard nav
     if (slash && slashEl) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
@@ -374,7 +620,6 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     const b = model.find(x => x.id === blkEl.dataset.id);
     if (!b) return;
 
-    // inline formatting shortcuts
     if ((e.metaKey || e.ctrlKey) && ['b', 'i', 'u', 'e'].includes(e.key.toLowerCase())) {
       e.preventDefault();
       const cmdMap = { b: 'bold', i: 'italic', u: 'underline', e: null };
@@ -390,7 +635,6 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     }
 
     if (e.key === '/') {
-      // open after the character lands
       setTimeout(() => {
         const off = getCaretOffset(bled) ?? bled.textContent.length;
         slash = { id: b.id, baseOff: Math.max(0, off - 1), query: '' };
@@ -407,7 +651,6 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
         return;
       }
       e.preventDefault();
-      // "---" then Enter makes a divider
       if (/^-{3}$/.test(bled.textContent)) {
         b.type = 'divider'; b.html = '';
         const idx = model.findIndex(x => x.id === b.id);
@@ -416,7 +659,6 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
         render(); pushOut();
         return;
       }
-      // empty list item exits the list
       if (LISTY.has(b.type) && isBlank(bled.innerHTML)) {
         if (b.indent) { indent(b, -1); return; }
         setType(b, 'p'); delete b.checked;
@@ -431,11 +673,17 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     if (e.key === 'Backspace') {
       const off = getCaretOffset(bled);
       const sel = getSelection();
-      const collapsed = sel.isCollapsed;
-      if (!collapsed || off !== 0) return;
+      if (!sel.isCollapsed || off !== 0) return;
       e.preventDefault();
-      if (b.indent > 0 && LISTY.has(b.type)) { indent(b, -1); return; }
-      if (LISTY.has(b.type) || ['quote', 'callout', 'code', 'todo'].includes(b.type)) {
+      if ((b.indent || 0) > 0) { indent(b, -1); return; }
+      if (b.type === 'image' && isBlank(b.html)) {
+        const i = model.findIndex(x => x.id === b.id);
+        model.splice(i, 1, { id: uid('b'), type: 'p', html: '', indent: 0 });
+        focusId = b.id; focusOff = 0;
+        render(); pushOut();
+        return;
+      }
+      if (b.type !== 'p' && !['image', 'table'].includes(b.type)) {
         setType(b, 'p');
         focusId = b.id; focusOff = 0;
         render(); pushOut();
@@ -458,13 +706,18 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
         ? cRect.top - edRect.top < 6
         : edRect.bottom - cRect.bottom < 6;
       if (!atEdge) return;
+      // move to nearest visible editable in direction
+      const all = [...root.querySelectorAll('.blk:not(.blk-hidden)')]
+        .filter(x => x.querySelector('.bled'));
+      const i = all.indexOf(blkEl);
+      const target = all[e.key === 'ArrowUp' ? i - 1 : i + 1];
+      if (!target) return;
       e.preventDefault();
-      const idx = model.findIndex(x => x.id === b.id);
-      const target = e.key === 'ArrowUp' ? model[idx - 1] : model[idx + 1];
-      if (!target || target.type === 'divider') return;
-      focusId = target.id;
+      const tb = model.find(x => x.id === target.dataset.id);
+      if (!tb || tb.type === 'divider') return;
+      focusId = tb.id;
       focusOff = e.key === 'ArrowUp'
-        ? (bledOf(target.id)?.textContent.length || 0)
+        ? (bledOf(tb.id)?.textContent.length || 0)
         : 0;
       render();
       return;
@@ -484,7 +737,7 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   }
 
   root.addEventListener('change', (e) => {
-    if (e.target.matches('input[type="checkbox"]')) {
+    if (e.target.matches('.blk > input[type="checkbox"]')) {
       const blkEl = curBlkEl(e.target);
       const b = model.find(x => x.id === blkEl.dataset.id);
       if (!b) return;
@@ -492,12 +745,36 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
       blkEl.classList.toggle('checked', !!b.checked);
       pushOut();
     }
+    if (e.target.classList?.contains('tg-chevron') === false) return;
+  });
+
+  // toggle collapse
+  root.addEventListener('click', (e) => {
+    const chev = e.target.closest('.tg-chevron');
+    if (chev) {
+      const blkEl = chev.closest('.blk');
+      const b = model.find(x => x.id === blkEl.dataset.id);
+      if (!b) return;
+      b.collapsed = !b.collapsed;
+      render(); pushOut();
+      return;
+    }
+    if (e.target.tagName === 'IMG' && e.target.closest('.img-wrap')) {
+      // click broken/normal image → replace source
+      const blkEl = e.target.closest('.blk');
+      const b = model.find(x => x.id === blkEl.dataset.id);
+      if (b) promptForImageUrl((url) => {
+        if (!url) return;
+        b.src = url;
+        render(); pushOut(); onChangeImmediate();
+      });
+    }
   });
 
   root.addEventListener('paste', (e) => {
-    e.preventDefault();
     const bled = curBled(e.target);
     if (!bled) return;
+    e.preventDefault();
     const blkEl = curBlkEl(e.target);
     const b = model.find(x => x.id === blkEl.dataset.id);
     const text = (e.clipboardData.getData('text/plain') || '').replace(/\r/g, '');
@@ -506,7 +783,7 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
       syncBlockEl(bled);
       return;
     }
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     if (!lines.length) return;
     bled.textContent += lines[0];
     b.html = cleanInline(bled.innerHTML);
@@ -514,18 +791,12 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     const idx = model.findIndex(x => x.id === b.id);
     const rest = lines.slice(1).map((line) => {
       const isBullet = /^[-*]\s+/.test(line);
-      const nb = {
-        id: uid('b'),
-        type: isBullet ? 'ul' : 'p',
-        html: esc(line.replace(/^[-*]\s+/, '')),
-        indent: 0,
-      };
+      const nb = { id: uid('b'), type: isBullet ? 'ul' : 'p', html: esc(line.replace(/^[-*]\s+/, '')), indent: 0 };
       lastId = nb.id;
       return nb;
     });
     model.splice(idx + 1, 0, ...rest);
-    focusId = rest.length ? rest[rest.length - 1].id : b.id;
-    focusOff = 99999;
+    focusId = lastId; focusOff = 99999;
     render(); pushOut();
   });
 
@@ -538,13 +809,11 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
     if (bled) syncBlockEl(bled);
   }, true);
 
-  // clicking a divider should still be harmless; clicking block gap focuses nearest
   root.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.bled') || e.target.closest('input')) return;
-    if (e.target.tagName === 'HR') return;
-    // clicked padding area of a block without hitting its text: focus its editable
+    if (e.target.closest('.bled') || e.target.closest('input') || e.target.closest('.tbl-tools') || e.target.closest('.tg-chevron') || e.target.closest('.blk-grip')) return;
+    if (e.target.tagName === 'HR' || e.target.tagName === 'TD' || e.target.tagName === 'TH' || e.target.tagName === 'IMG') return;
     const blk = e.target.closest('.blk');
-    if (!blk) return;
+    if (!blk || blk.classList.contains('blk-hidden')) return;
     const ed = blk.querySelector('.bled');
     if (ed) { e.preventDefault(); placeCaretEnd(ed); ed.focus(); }
   });
@@ -552,7 +821,7 @@ export function mountEditor({ mount, blocks, onChange, placeholder, autoFocus = 
   render();
 
   return {
-    destroy() { destroyed = true; pushOut.cancel(); root.remove(); },
+    destroy() { pushOut.cancel(); root.remove(); },
     flush() { pushOut.flush(); },
     focus() { const f = root.querySelector('.bled'); f?.focus(); },
     el: root,

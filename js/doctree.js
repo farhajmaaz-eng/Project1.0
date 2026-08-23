@@ -78,16 +78,18 @@ export function pageMenu(anchor, docId, rerender) {
       { value: 'fav', label: docById(docId)?.favorite ? 'Remove from favorites' : 'Favorite', icon: ico('star', 14) },
       { value: 'dup', label: 'Duplicate', icon: ico('copy', 14) },
       { value: 'exportmd', label: 'Export as Markdown', icon: ico('down', 14) },
+      { value: 'print', label: 'Print / PDF', icon: ico('doc', 14) },
       { sep: true },
-      { value: 'del', label: 'Delete page', icon: ico('trash', 14), danger: true },
+      { value: 'del', label: 'Move to trash', icon: ico('trash', 14), danger: true },
     ],
     onSelect: (v) => {
       if (v === 'add') {
-        const d = createDoc({ parentId: docId, title: '' });
+        import('./views/docs.js').then(m => m.createAndOpenPage(docId));
         expanded.add(docId);
-        import('./nav.js').then(({ nav }) => nav(`#/doc/${d.id}`));
         rerender?.();
+        return;
       }
+      if (v === 'print') { window.print(); return; }
       if (v === 'fav') {
         const d = docById(docId);
         updateDoc(docId, { favorite: !d.favorite });
@@ -119,7 +121,7 @@ export function pageMenu(anchor, docId, rerender) {
       if (v === 'del') {
         const snaps = deleteDocTree(docId);
         const count = snaps.length;
-        toast(count > 1 ? `Deleted ${count} pages` : 'Page deleted', {
+        toast(count > 1 ? `${count} pages moved to trash` : 'Page moved to trash', {
           action: { label: 'Undo', fn: () => { restoreDocs(snaps); } },
         });
         import('./nav.js').then(({ nav }) => nav('#/docs'));

@@ -2,7 +2,7 @@
    Tessera · palette — ⌘K command menu: navigation, search, actions
 --------------------------------------------------------------------------- */
 
-import { esc, fuzzy, markHtml } from './util.js';
+import { esc, fuzzy, markHtml, htmlToText } from './util.js';
 import { ico } from './icons.js';
 import { S, issueById, docById, project as projectOf, issueRef, docPath } from './store.js';
 import { openModal } from './ui.js';
@@ -100,12 +100,33 @@ export function openPalette(initialQuery = '') {
           }});
         }
         for (const d of S().docs) {
+          if (d.trashed) continue;
           const f = fuzzy(q, d.title || 'Untitled');
           if (f) scored.push({ score: f.score - 2, item: {
             group: 'Pages', icon: null, emoji: d.icon,
             label: d.title || 'Untitled', sub: 'page', marks: f.marks,
             run: () => go(`#/doc/${d.id}`),
           }});
+        }
+        // full-text page contents (title misses but body hits)
+        if (q.length >= 3) {
+          let added = 0;
+          for (const d of S().docs) {
+            if (added >= 4) break;
+            if (d.trashed) continue;
+            const text = d.blocks.map(b => htmlToText(b.html)).join(' ');
+            const idx = text.toLowerCase().indexOf(q.toLowerCase());
+            if (idx === -1) continue;
+            if ((d.title || '').toLowerCase().includes(q.toLowerCase())) continue; // already listed
+            const start = Math.max(0, idx - 42);
+            const snippet = (start > 0 ? '…' : '') + text.slice(start, idx + q.length + 60).trim() + '…';
+            scored.push({ score: 12 - added, item: {
+              group: 'Page contents', icon: null, emoji: d.icon,
+              label: `${d.title || 'Untitled'} — ${snippet}`, sub: 'match',
+              run: () => go(`#/doc/${d.id}`),
+            }});
+            added++;
+          }
         }
         for (const p of S().projects) {
           const f = fuzzy(q, p.name);

@@ -323,3 +323,155 @@
   display: flex; flex-wrap: wrap; gap: 6px;
   padding: 12px 18px;
 }
+
+/* ---------------------------------------------------------------------------
+   v2.2 — toggles, tables, images, covers, trash, print
+--------------------------------------------------------------------------- */
+
+.blk-hidden { display: none !important; }
+
+/* toggle blocks */
+.tg-chevron {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; flex: none;
+  margin-right: 4px;
+  border-radius: 5px; color: var(--text-3);
+  transition: transform .16s var(--ease), background .12s, color .12s;
+}
+.tg-chevron:hover { background: var(--hover); color: var(--text); }
+.tg-chevron.closed { transform: rotate(0deg); }
+.blk.t-toggle { display: flex; align-items: flex-start; }
+.blk.t-toggle > div:not(.tbl-wrap):not(.img-wrap):not(:last-child) { min-width: 0; }
+.blk[indent] .tg-chevron { opacity: .85; }
+
+/* block grip is now functional everywhere */
+.blk { padding-left: 2px; }
+.blk > .blk-grip {
+  position: absolute; left: -21px; top: 6px;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .12s, color .12s, transform .12s var(--spring);
+  color: var(--text-3);
+  cursor: grab;
+}
+.beditor:hover .blk:hover > .blk-grip { opacity: .75; }
+.blk-grip:hover { opacity: 1 !important; color: var(--text); }
+
+/* tables */
+.tbl-wrap { position: relative; margin: 8px 0; max-width: 100%; overflow-x: auto; }
+table.btbl {
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 240px;
+}
+.btbl th, .btbl td {
+  border: 1px solid var(--line-2);
+  padding: 6px 10px;
+  min-width: 90px;
+  vertical-align: top;
+  text-align: left;
+}
+.btbl th {
+  background: var(--bg-2);
+  font-weight: 620;
+}
+.btbl .tcell:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent); background: var(--accent-faint); }
+.tbl-tools {
+  position: absolute; top: -26px; right: 0;
+  display: none; gap: 2px;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 2px;
+}
+.tbl-wrap:hover .tbl-tools { display: inline-flex; }
+.tbl-tools button {
+  width: 20px; height: 20px; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+}
+.tbl-tools button:hover { background: var(--hover); color: var(--text); }
+
+/* images */
+.img-wrap { margin: 10px 0 4px; }
+.img-wrap img {
+  max-width: 100%; max-height: 420px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+.img-wrap.img-broken::before {
+  content: "Image — click to set a URL";
+  display: flex; align-items: center; justify-content: center;
+  height: 120px;
+  background:
+    repeating-linear-gradient(45deg, var(--bg-2) 0 12px, var(--raise) 12px 24px);
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  color: var(--text-3); font-size: 12px;
+  cursor: pointer;
+}
+.blk.t-image .bled { color: var(--text-3); font-size: 12.5px; text-align: center; }
+
+/* page cover */
+.doc-cover {
+  position: relative;
+  height: 150px;
+  border-radius: 14px;
+  margin-bottom: -34px;
+  overflow: hidden;
+}
+.cover-change {
+  position: absolute; right: 10px; bottom: 10px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(10,10,14,.55);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 11.5px; font-weight: 600;
+  padding: 5px 9px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.doc-cover:hover .cover-change { opacity: 1; }
+.cover-add {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 550; color: var(--text-3);
+  padding: 5px 9px;
+  border-radius: 8px;
+  margin: -6px 0 2px -9px;
+  opacity: 0;
+  transition: opacity .15s, background .12s, color .12s;
+}
+.doc-page:hover .cover-add { opacity: 1; }
+.cover-add:hover { background: var(--hover); color: var(--text); }
+.doc-title-row.with-cover { margin-top: 6px; }
+.doc-title-row.with-cover .doc-bigicon {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 4px 2px;
+  box-shadow: var(--shadow-1);
+}
+
+/* trash pane */
+.trash-sec .sb-item button { display: none; }
+.trash-sec .sb-item:hover button { display: inline-flex; }
+
+/* ---------------------------------------------------------------------------
+   print — clean PDFs from any page
+--------------------------------------------------------------------------- */
+@media print {
+  body { overflow: visible !important; background: #fff !important; color: #111 !important; }
+  .sidebar, .tabbar, .mob-top, .toolbar, .doc-tree-pane, .doc-meta,
+  .doc-foot, .crumbs, .blk-grip, .cover-change, .cover-add,
+  .ai-composer, .toasts, #overlays { display: none !important; }
+  #app { grid-template-columns: 1fr !important; height: auto !important; }
+  .view { overflow: visible !important; }
+  .view-inner { padding: 0 !important; max-width: 100% !important; }
+  .docs-shell { grid-template-columns: 1fr !important; height: auto !important; }
+  .doc-page { max-width: 100% !important; padding: 0 !important; }
+  .doc-cover { height: 90px !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .doc-title { font-size: 26px !important; color: #000 !important; }
+  .bled, .md { color: #111 !important; }
+  a { color: inherit !important; text-decoration: underline; }
+  .reveal > * { animation: none !important; }
+}

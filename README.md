@@ -16,6 +16,19 @@ python3 -m http.server 8080   # or: npx serve .
 
 Open http://localhost:8080, create your workspace, go. GitHub Pages works as-is.
 
+## The docs side (the Notion half)
+
+- **Covers** — gradient covers above the page icon, one click to set or swap
+- **Templates** — Meeting notes / Weekly plan / Project brief when creating a page
+- **Toggle blocks** — collapsible sections; Tab nests anything under them
+- **Tables** — editable cells, header row, add/remove rows & columns
+- **Images** — embed by URL, with captions; click to replace
+- **Block handles** — hover any block: turn into any type, duplicate, move up/down, delete
+- **Trash** — deleted pages are recoverable until purged
+- **Full-text search** — ⌘K finds pages by body content with snippets
+- **Print / PDF** — clean print stylesheet per page; export as Markdown too
+- Reading time, word count, favorites, nested sub-pages
+
 ## Feature highlights
 
 - **AI subtask generation** — open any issue, hit *Generate*, review the
