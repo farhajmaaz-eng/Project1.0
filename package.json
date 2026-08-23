@@ -1,0 +1,10 @@
+{
+  "name": "tessera",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first workspace that blends an issue tracker with a docs tool. No backend, no build step.",
+  "scripts": {
+    "check": "node --check js/main.js && for f in $(find js -name '*.js'); do node --check $f || exit 1; done"
+  }
+}

@@ -1,0 +1,192 @@
+/* ---------------------------------------------------------------------------
+   Tessera · base — reset & primitives
+--------------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font: 400 14px/1.55 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, p { margin: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+img { display: block; max-width: 100%; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+::selection { background: rgba(217, 160, 91, .30); }
+[data-theme="light"] ::selection { background: rgba(160, 107, 34, .22); }
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- type utilities ---- */
+.mono { font-family: var(--mono); font-size: 12px; letter-spacing: .01em; }
+.dim { color: var(--text-2); }
+.faint { color: var(--text-3); }
+.serif { font-family: var(--serif); }
+.small { font-size: 12.5px; }
+.caps {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--text-3);
+}
+
+kbd {
+  font: 500 11px/1 var(--mono);
+  color: var(--text-2);
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 3px 5px 2px;
+  white-space: nowrap;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 12px;
+  border-radius: var(--r-s);
+  border: 1px solid transparent;
+  font-weight: 500; font-size: 13px;
+  transition: background .12s var(--ease), border-color .12s var(--ease), color .12s var(--ease);
+  white-space: nowrap;
+  user-select: none;
+}
+.btn.primary {
+  background: var(--accent); color: var(--on-accent); font-weight: 600;
+}
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.ghost { border-color: var(--line-2); color: var(--text); background: transparent; }
+.btn.ghost:hover { background: var(--hover); }
+.btn.subtle { color: var(--text-2); }
+.btn.subtle:hover { background: var(--hover); color: var(--text); }
+.btn.danger-ghost { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.btn.danger-ghost:hover { background: var(--danger-dim); }
+.btn.sm { height: 27px; padding: 0 9px; font-size: 12.5px; }
+
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; flex: none;
+  border-radius: 7px; color: var(--text-3);
+  transition: background .12s, color .12s;
+}
+.icon-btn:hover { background: var(--hover); color: var(--text); }
+.icon-btn.on { color: var(--accent); background: var(--accent-dim); }
+
+/* ---- inputs ---- */
+.input, select.input, textarea.input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-s);
+  padding: 7px 10px;
+  color: var(--text);
+  transition: border-color .12s, box-shadow .12s;
+}
+.input::placeholder { color: var(--text-3); }
+.input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
+
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  height: 30px; padding: 0 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  color: var(--text-3);
+  min-width: 150px;
+}
+.search-box input {
+  border: 0; outline: none; background: none;
+  color: var(--text); width: 100%; font-size: 13px;
+}
+.search-box input::placeholder { color: var(--text-3); }
+.search-box:focus-within { border-color: var(--line-2); background: var(--surface); }
+
+input[type="date"].input::-webkit-calendar-picker-indicator {
+  filter: invert(.6); cursor: pointer;
+}
+[data-theme="light"] input[type="date"].input::-webkit-calendar-picker-indicator { filter: none; }
+
+/* ---- avatars, chips, badges ---- */
+.avatar {
+  width: 22px; height: 22px; flex: none;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .02em;
+  color: #16130e;
+  user-select: none;
+}
+.avatar.lg { width: 30px; height: 30px; font-size: 12px; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 20px; padding: 0 7px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 500;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+.count-pill {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-3);
+  background: var(--raise);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.key-chip {
+  font-family: var(--mono); font-size: 11.5px;
+  color: var(--text-3);
+  letter-spacing: .03em;
+}
+
+.badge-due {
+  font-family: var(--mono); font-size: 10.5px;
+  padding: 1px 6px; border-radius: 5px;
+  color: var(--text-3); border: 1px solid transparent;
+}
+.badge-due.soon { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.badge-due.over { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+
+/* ---- generic panel / card ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-l);
+}
