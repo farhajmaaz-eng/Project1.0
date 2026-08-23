@@ -30,6 +30,10 @@
   transition: background .1s;
 }
 .menu-item .mi-ic { color: var(--text-3); flex: none; display: inline-flex; }
+.menu-item .mi-label {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .menu-item:hover, .menu-item.sel { background: var(--hover); }
 .menu-item.sel .mi-ic, .menu-item:hover .mi-ic { color: var(--text-2); }
 .menu-item.danger { color: var(--danger); }
@@ -105,7 +109,8 @@
   font-size: 13.5px;
   transition: background .08s;
 }
-.pal-item .pi-sub { margin-left: auto; font-size: 11px; color: var(--text-3); font-family: var(--mono); }
+.pal-item .pi-sub { margin-left: auto; font-size: 11px; color: var(--text-3); font-family: var(--mono); flex: none; }
+.pal-item .pi-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pal-item .pi-ic { color: var(--text-3); display: inline-flex; flex: none; transition: color .12s, transform .12s var(--spring); }
 .pal-item b { font-weight: 620; color: var(--accent); }
 .pal-item.sel { background: var(--hover); }

@@ -7,10 +7,10 @@
 import { esc, sleep } from './../util.js';
 import { ico } from './../icons.js';
 import {
-  S, you, setSetting, setAI, pushMessage, status as statusOf,
+  S, you, setSetting, setAI, pushMessage, emit, status as statusOf,
   issueRef, project as projectOf,
 } from './../store.js';
-import { toast, openMenu } from './../ui.js';
+import { toast } from './../ui.js';
 import { renderMarkdown } from './../md.js';
 import { CURATED_MODELS, chatStream, testKey, listModels } from './../openrouter.js';
 
@@ -139,7 +139,12 @@ function renderChat(shell) {
   const suggestEl = shell.querySelector('[data-suggest]');
 
   /* header controls */
-  shell.querySelector('[data-model]').onclick = (e) => pickModel(e.currentTarget);
+  shell.querySelector('[data-model]').onclick = () => openModelPicker({
+    onPick: (id) => {
+      setAI({ model: id });
+      shell.querySelector('[data-model] span').textContent = shortModel(id);
+    },
+  });
   shell.querySelector('[data-newchat]').onclick = async () => {
     if (thread.length && !confirmClear()) return;
     stopStreaming();
@@ -183,6 +188,9 @@ function renderChat(shell) {
         <div class="msg-body"><div class="bubble">${esc(content)}</div></div>
         <span class="msg-avatar avatar" style="background:${S().members.find(m => m.you)?.color || '#d9a05b'}">${initials()}</span>`;
     } else {
+      const isLast = !streamingNow
+        && S().ai.thread.length
+        && S().ai.thread[S().ai.thread.length - 1].content === content;
       wrap.innerHTML = `
         <span class="msg-avatar">${ico('sparkles', 14)}</span>
         <div class="msg-body-ai">
@@ -190,14 +198,27 @@ function renderChat(shell) {
           ${!streamingNow ? `
           <div class="msg-meta">
             <button class="icon-btn" data-copy title="Copy" style="width:22px;height:22px">${ico('copy', 12)}</button>
+            ${isLast ? `<button class="icon-btn" data-regen title="Regenerate" style="width:22px;height:22px">${ico('rotate', 12)}</button>` : ''}
           </div>` : ''}
         </div>`;
       wrap.querySelector('[data-copy]')?.addEventListener('click', () => {
         navigator.clipboard.writeText(content).then(() => toast('Copied'));
       });
+      wrap.querySelector('[data-regen]')?.addEventListener('click', () => regenerate());
     }
     threadEl.appendChild(wrap);
     return wrap;
+  }
+
+  /** drop the last assistant reply and ask again */
+  function regenerate() {
+    if (streaming) return;
+    const t = S().ai.thread;
+    if (!t.length || t[t.length - 1].role !== 'assistant') return;
+    t.pop();
+    emit();
+    paintThread();
+    runCompletion();
   }
 
   function initials() {
@@ -243,6 +264,12 @@ function renderChat(shell) {
     pushMessage('user', q);
     appendMsg('user', q);
     scrollDown();
+    runCompletion();
+  }
+
+  /** streams a completion for the current thread (used by send + regenerate) */
+  async function runCompletion() {
+    if (streaming) return;
 
     const msgs = [
       { role: 'system', content: systemPrompt(S().ai.useContext) },
@@ -305,46 +332,8 @@ function renderChat(shell) {
     }
   }
 
-  /* model picker */
-  async function pickModel(anchor) {
-    const st = S();
-    const cached = st.ai.modelsCache;
-    let items = CURATED_MODELS.map(m => ({
-      value: m.id, label: m.label, checked: m.id === st.ai.model,
-    }));
-    items.push({ sep: true });
-    items.push({
-      value: '__refresh__', label: cached ? `Refresh catalog (${cached.length})` : 'Load full catalog',
-      icon: ico('rotate', 13),
-    });
-    if (cached) {
-      const extra = cached.filter(id => !CURATED_MODELS.some(c => c.id === id));
-      if (extra.length) {
-        items.push({ header: 'All models' });
-        for (const id of extra) items.push({ value: id, label: id, checked: id === st.ai.model });
-      }
-    }
-
-    openMenu({
-      anchor, minWidth: 250, maxHeight: 320,
-      items,
-      onSelect: async (v) => {
-        if (v === '__refresh__') {
-          toast('Loading models…');
-          try {
-            const all = await listModels(st.settings.openrouterKey);
-            setAI({ modelsCache: all });
-            toast(`${all.length} models available`);
-          } catch (err) {
-            toast(err.message);
-          }
-          return;
-        }
-        setAI({ model: v });
-        shell.querySelector('[data-model] span').textContent = shortModel(v);
-      },
-    });
-  }
+  /* model picker — searchable, shared with Settings */
+  async function pickModel() { /* replaced by openModelPicker */ }
 
   paintThread();
 }
@@ -358,4 +347,137 @@ function shortModel(id = '') {
 function confirmClear() {
   // lightweight inline confirm; avoids modal dependency loops
   return window.confirm('Clear this conversation?');
+}
+
+/* ---------------------------------------------------------------------------
+   openModelPicker — searchable browser for the whole OpenRouter catalog.
+   Used from the assistant header and from Settings → AI.
+--------------------------------------------------------------------------- */
+
+export function openModelPicker({ current, onPick } = {}) {
+  current = current ?? S().ai.model;
+  let sel = 0;
+  let results = [];
+
+  import('./../ui.js').then(({ openModal: om }) => {
+    om((modal, close) => {
+      modal.classList.remove('modal');
+      modal.classList.add('palette');
+      modal.innerHTML = `
+        <div class="palette-input">
+          ${ico('search', 16)}
+          <input type="text" placeholder="Search models — try “sonnet”, “llama”, “free”…" autocomplete="off" spellcheck="false"/>
+          <kbd>esc</kbd>
+        </div>
+        <div class="palette-list" data-list></div>
+        <div class="palette-foot">
+          <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+          <span><kbd>↵</kbd> select</span>
+          <span style="margin-left:auto">catalog fetched live from OpenRouter</span>
+        </div>`;
+
+      const input = modal.querySelector('input');
+      const listEl = modal.querySelector('[data-list]');
+      setTimeout(() => input.focus(), 40);
+
+      async function ensureCatalog() {
+        if (S().ai.modelsCache) return S().ai.modelsCache;
+        try {
+          const all = await listModels(S().settings.openrouterKey);
+          setAI({ modelsCache: all });
+          return all;
+        } catch {
+          return null; // offline / bad key — curated still works
+        }
+      }
+
+      function paint(q = '') {
+        const query = q.trim().toLowerCase();
+        const curated = CURATED_MODELS
+          .filter(m => !query || m.label.toLowerCase().includes(query) || m.id.toLowerCase().includes(query))
+          .map(m => ({ id: m.id, label: m.label, curated: true }));
+
+        const cache = S().ai.modelsCache || [];
+        const extra = cache
+          .filter(id => !CURATED_MODELS.some(c => c.id === id))
+          .filter(id => !query || id.toLowerCase().includes(query))
+          .slice(0, query ? 40 : 25)
+          .map(id => ({ id, label: '', curated: false }));
+
+        // exact-id escape hatch
+        const exactLooksLikeId = /^[a-z0-9_-]+\/[a-z0-9._:-]+$/i.test(q.trim()) &&
+          !curated.some(m => m.id === q.trim()) && !extra.some(m => m.id === q.trim());
+        if (exactLooksLikeId) extra.unshift({ id: q.trim(), label: 'use exactly', curated: false });
+
+        results = [...curated, ...extra];
+        sel = Math.min(sel, Math.max(0, results.length - 1));
+
+        if (!results.length && !loading) {
+          listEl.innerHTML = `<div class="palette-empty">No models match “${esc(q)}”.<br>Load failed? You can still type a full id like <b>vendor/model</b>.</div>`;
+          return;
+        }
+
+        let html = '';
+        let lastCurated = null;
+        results.forEach((m, i) => {
+          if (m.curated !== lastCurated) {
+            html += `<div class="palette-group caps">${m.curated ? 'Curated' : 'All models'}</div>`;
+            lastCurated = m.curated;
+          }
+          html += `
+            <button class="pal-item ${i === sel ? 'sel' : ''}" data-i="${i}">
+              ${m.id === current ? `<span class="mpick-check">${ico('check', 13)}</span>` : `<span style="width:13px"></span>`}
+              <span class="mpick-id">${markId(m.id, query)}</span>
+              ${m.label && m.label !== m.id ? `<span class="mpick-note">${esc(m.label)}</span>` : ''}
+            </button>`;
+        });
+        if (loading) {
+          html += `<div style="padding:10px 12px"><span class="faint small">${ico('rotate', 12)} loading full catalog…</span></div>`;
+        }
+        listEl.innerHTML = html;
+
+        [...listEl.querySelectorAll('.pal-item')].forEach((btn) => {
+          btn.onclick = () => pick(results[+btn.dataset.i]);
+          btn.onpointerenter = () => {
+            sel = +btn.dataset.i;
+            [...listEl.querySelectorAll('.pal-item')].forEach(b2 => b2.classList.toggle('sel', b2 === btn));
+          };
+        });
+        listEl.querySelector('.pal-item.sel')?.scrollIntoView({ block: 'nearest' });
+      }
+
+      function markId(id, query) {
+        if (!query) return esc(id);
+        const i = id.toLowerCase().indexOf(query);
+        if (i === -1) return esc(id);
+        return esc(id.slice(0, i)) + '<b>' + esc(id.slice(i, i + query.length)) + '</b>' + esc(id.slice(i + query.length));
+      }
+
+      function pick(m) {
+        if (!m) return;
+        setAI({ model: m.id });
+        close();
+        onPick?.(m.id);
+      }
+
+      input.addEventListener('input', () => { sel = 0; paint(input.value); });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (!results.length) return;
+          sel = (sel + (e.key === 'ArrowDown' ? 1 : results.length - 1)) % results.length;
+          [...listEl.querySelectorAll('.pal-item')].forEach((b, i) =>
+            b.classList.toggle('sel', i === sel));
+          listEl.querySelector('.pal-item.sel')?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          pick(results[sel]);
+        }
+      });
+
+      let loading = true;
+      paint();
+      ensureCatalog().then(() => { loading = false; paint(input.value); });
+    }, { width: 580 });
+  });
 }

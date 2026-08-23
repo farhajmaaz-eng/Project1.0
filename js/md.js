@@ -5,6 +5,40 @@
 
 import { esc } from './util.js';
 
+/** blocks (editor model) → markdown string, for page export */
+export function blocksToMarkdown(blocks = [], title = '') {
+  const out = [];
+  if (title) out.push(`# ${title}`, '');
+  let olCounter = 0;
+  for (const b of blocks) {
+    const text = (b.html || '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?(b|strong)>/gi, '**')
+      .replace(/<\/?(i|em)>/gi, '_')
+      .replace(/<s|strike[^>]*>/g, '~~').replace(/<\/(s|strike)>/g, '~~')
+      .replace(/<code>/g, '`').replace(/<\/code>/g, '`')
+      .replace(/<[^>]+>/g, '');
+    const t = text; // already entity-escaped in model; leave as-is for md
+    switch (b.type) {
+      case 'h1': out.push(`## ${t}`, ''); break;
+      case 'h2': out.push(`### ${t}`, ''); break;
+      case 'h3': out.push(`#### ${t}`, ''); break;
+      case 'ul': out.push(`${'  '.repeat(b.indent || 0)}- ${t}`); olCounter = 0; break;
+      case 'ol': olCounter++; out.push(`${'  '.repeat(b.indent || 0)}${olCounter}. ${t}`); break;
+      case 'todo': out.push(`${'  '.repeat(b.indent || 0)}- [${b.checked ? 'x' : ' '}] ${t}`); olCounter = 0; break;
+      case 'quote': out.push(`> ${t}`, ''); break;
+      case 'callout': out.push(`> ${b.icon || '💡'} **Note**`, `> ${t}`, ''); break;
+      case 'code': out.push('```', b.html || '', '```', ''); break;
+      case 'divider': out.push('---', ''); break;
+      default:
+        if (!t.trim() && !t.includes('<br')) { out.push(''); }
+        else { out.push(t, ''); }
+        olCounter = 0;
+    }
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+}
+
 export function renderMarkdown(src = '') {
   // fenced code blocks first
   const blocks = [];

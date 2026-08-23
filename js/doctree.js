@@ -77,6 +77,7 @@ export function pageMenu(anchor, docId, rerender) {
       { value: 'add', label: 'Add sub-page', icon: ico('plus', 14) },
       { value: 'fav', label: docById(docId)?.favorite ? 'Remove from favorites' : 'Favorite', icon: ico('star', 14) },
       { value: 'dup', label: 'Duplicate', icon: ico('copy', 14) },
+      { value: 'exportmd', label: 'Export as Markdown', icon: ico('down', 14) },
       { sep: true },
       { value: 'del', label: 'Delete page', icon: ico('trash', 14), danger: true },
     ],
@@ -103,6 +104,17 @@ export function pageMenu(anchor, docId, rerender) {
         });
         toast('Page duplicated');
         rerender?.();
+      }
+      if (v === 'exportmd') {
+        const d = docById(docId);
+        import('./md.js').then(({ blocksToMarkdown }) => {
+          import('./util.js').then(({ downloadFile }) => {
+            const md = blocksToMarkdown(d.blocks, d.title || 'Untitled');
+            const safe = (d.title || 'page').replace(/[^\w\d-]+/g, '-').slice(0, 40) || 'page';
+            downloadFile(`${safe}.md`, md, 'text/markdown');
+            toast('Markdown downloaded');
+          });
+        });
       }
       if (v === 'del') {
         const snaps = deleteDocTree(docId);

@@ -112,6 +112,10 @@ async function route() {
     hash.startsWith('#/cycle/')   ? () => import('./views/cycles.js').then(m => m.renderCycle(viewEl, hash.split('/')[2]))
   : hash.startsWith('#/project/') ? () => import('./views/projects.js').then(m => m.renderProject(viewEl, hash.split('/')[2]))
   : hash.startsWith('#/doc/')     ? () => import('./views/docs.js').then(m => m.renderDocs(viewEl, hash.split('/')[2]))
+  : hash.startsWith('#/issue/')   ? () => Promise.all([
+      import('./views/issues.js').then(m => m.renderIssues(viewEl, '#/all')),
+      import('./issue-drawer.js'),
+    ]).then(([, d]) => d.openIssue(hash.split('/')[2]))
   : null;
 
   renderSidebar();
@@ -145,9 +149,15 @@ function exitAuthMode() {
 }
 
 function setMobileTitle(hash) {
+  if (hash.startsWith('#/issue/')) { const el = document.querySelector('.mob-title'); if (el) el.textContent = 'Issue'; return; }
   const base = hash.split('/').slice(0, 2).join('/');
   const el = document.querySelector('.mob-title');
   if (el) el.textContent = ROUTE_TITLES[base] || (hash.startsWith('#/doc/') ? 'Page' : base.replace('#/', '') || 'Tessera');
+}
+
+/* offline support */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 
 /** staggered entrance for the freshly rendered view */

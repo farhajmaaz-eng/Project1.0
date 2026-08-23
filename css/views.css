@@ -388,3 +388,49 @@
   border-radius: var(--r-m);
   padding: 14px 16px;
 }
+
+/* ================= subtasks (issue drawer) ================= */
+.subsec { margin-top: 28px; }
+.subsec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.subsec-head .caps { flex: 1; }
+.sub-progress {
+  width: 70px; height: 4px; border-radius: 99px;
+  background: var(--raise); overflow: hidden;
+}
+.sub-progress i { display: block; height: 100%; background: var(--ok); transition: width .3s var(--ease-out); }
+.subrow {
+  display: flex; align-items: center; gap: 9px;
+  width: calc(100% + 12px); margin: 0 -6px;
+  padding: 6px 6px; border-radius: 8px;
+}
+.subrow:hover { background: var(--hover); }
+.subrow .sr-title {
+  flex: 1; min-width: 0; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: default;
+}
+.subrow.done .sr-title { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.sub-add { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.sub-add input {
+  flex: 1; min-width: 0;
+  background: none; border: 0; outline: none;
+  border-bottom: 1px dashed var(--line-2);
+  padding: 5px 2px; font-size: 13px; color: var(--text);
+}
+.sub-add input:focus { border-color: var(--accent); }
+
+/* AI generate button */
+.btn.ai-btn { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-faint); font-weight: 600; }
+.btn.ai-btn:hover { background: var(--accent-dim); }
+.gen-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 4px;
+  border-top: 1px dashed var(--line);
+}
+.gen-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+.gen-item .g-title { flex: 1; min-width: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.gen-item select {
+  background: var(--raise); color: var(--text-2);
+  border: 1px solid var(--line); border-radius: 6px;
+  font-size: 11px; padding: 2px 4px; flex: none;
+}

@@ -74,7 +74,7 @@ export function openMenu({ anchor, x, y, items, onSelect, minWidth }) {
     b.dataset.idx = i;
     b.innerHTML = `
       ${it.icon ? `<span class="mi-ic">${it.icon}</span>` : ''}
-      <span>${esc(it.label)}</span>
+      <span class="mi-label">${esc(it.label)}</span>
       ${it.kbd ? `<span class="mi-kbd"><kbd>${esc(it.kbd)}</kbd></span>` : ''}
       ${it.checked ? `<span class="mi-check">${ico('check', 13)}</span>` : ''}`;
     b.onclick = () => { close(); onSelect?.(it.value, it); };

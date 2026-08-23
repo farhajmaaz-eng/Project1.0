@@ -257,3 +257,14 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
   animation: rot .8s linear infinite;
 }
 @keyframes rot { to { rotate: 360deg; } }
+
+/* ---------------------------------------------------------------------------
+   overflow hardening — nothing bleeds, ever
+--------------------------------------------------------------------------- */
+.bled, .bc-title, .bubble, .c-text, .md, .onboard-main, .entity-main,
+.msg-body-ai, .mini-row .mr-title {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.chip { max-width: 220px; }
+.toast > span:first-child { min-width: 0; overflow-wrap: anywhere; }

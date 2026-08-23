@@ -16,6 +16,23 @@ python3 -m http.server 8080   # or: npx serve .
 
 Open http://localhost:8080, create your workspace, go. GitHub Pages works as-is.
 
+## Feature highlights
+
+- **AI subtask generation** — open any issue, hit *Generate*, review the
+  AI's proposed breakdown (edit priorities, uncheck what you don't want),
+  and create them as real linked subtasks in one click.
+- **Subtasks** — inline composer in the drawer, progress bar, done-toggle,
+  parent breadcrumbs on children.
+- **Searchable model picker** — fuzzy search across OpenRouter's entire live
+  catalog from the assistant header or Settings; exact-id escape hatch for
+  anything not listed.
+- **Issue deep links** — `#/issue/<id>` routes; copy-link button in the drawer.
+- **Regenerate** the last assistant reply, due-date quick picks
+  (Today / Tomorrow / Next week), duplicate issues, export any page as
+  Markdown.
+- **Installable & offline** — PWA manifest, generated icons, service worker
+  that caches the shell (network-first for navigations so deploys land).
+
 ## What changed in v2
 
 - **Real onboarding** — local signup/sign-in (salted SHA-256, no plaintext),

@@ -1,24 +1,29 @@
 /* ---------------------------------------------------------------------------
-   Tessera · issue drawer — slide-over editor for a single issue
+   Tessera · issue drawer v2 — slide-over editor with subtasks, AI breakdown,
+   due-date quick picks, deep links and duplication.
 --------------------------------------------------------------------------- */
 
-import { esc } from './util.js';
+import { esc, uid } from './util.js';
 import { ico, statusIcon, priIcon } from './icons.js';
 import {
   S, issueById, member as memberOf, label as labelOf, status as statusOf,
   project as projectOf, cycle as cycleOf, issueRef, you,
   updateIssue, deleteIssue, addComment, touchRecent, emit,
+  childrenIssues, createIssue, duplicateIssue, logAct,
 } from './store.js';
-import { toast, openMenu } from './ui.js';
+import { toast, openMenu, openModal } from './ui.js';
 import { avatarHTML, labelChip } from './bits.js';
 import { mountEditor } from './editor.js';
-import { nav } from './nav.js';
+import { chatStream } from './openrouter.js';
 
 let current = null; // active drawer handle
 let currentId = null;
 
 export function isDrawerOpen() { return !!current; }
-export function closeDrawer() { current?.close(); current = null; }
+export function closeDrawer() {
+  current?.close();
+  current = null;
+}
 
 export function openIssue(id) {
   const existing = issueById(id);
@@ -35,6 +40,7 @@ export function openIssue(id) {
     <aside class="drawer" role="dialog" aria-label="Issue">
       <div class="drawer-bar">
         <span class="key-chip" data-ref></span>
+        <button class="icon-btn" style="width:24px;height:24px" data-copylink title="Copy link">${ico('key', 13)}</button>
         <span class="save-dot">${ico('check', 11)} saved</span>
         <span style="flex:1"></span>
         <button class="icon-btn" data-more aria-label="More actions">${ico('dots', 16)}</button>
@@ -74,16 +80,23 @@ export function openIssue(id) {
   function renderAll() {
     const iss = issueById(currentId);
     if (!iss) { close(); return; }
-    const s = S();
 
     wrap.querySelector('[data-ref]').textContent = issueRef(iss);
 
+    const parent = iss.parent ? issueById(iss.parent) : null;
+
     body.innerHTML = `
+      ${parent ? `
+      <nav class="crumbs" style="margin-bottom:10px">
+        <span class="faint">subtask of</span>
+        <button data-openparent="${parent.id}">${issueRef(parent)} · ${esc(parent.title || 'Untitled')}</button>
+      </nav>` : ''}
       <textarea class="is-title" rows="1" placeholder="Issue title">${esc(iss.title)}</textarea>
       <div class="is-cols">
         <section style="min-width:0">
           <div class="caps is-desc-label">Description</div>
           <div data-editor></div>
+          <div class="subsec" data-subtasks></div>
           <div class="activity" data-activity></div>
         </section>
         <aside class="props">
@@ -93,7 +106,7 @@ export function openIssue(id) {
           <div class="prop-row"><label>Labels</label><button class="prop-btn" data-prop="labels"></button></div>
           <div class="prop-row"><label>Project</label><button class="prop-btn" data-prop="project"></button></div>
           <div class="prop-row"><label>Cycle</label><button class="prop-btn" data-prop="cycle"></button></div>
-          <div class="prop-row"><label>Due</label><input type="date" class="input" style="padding:4px 7px;font-size:12px;background:none;border-color:var(--line)" data-due value="${iss.due || ''}"/></div>
+          <div class="prop-row"><label>Due</label><button class="prop-btn" data-prop="due"></button></div>
         </aside>
       </div>`;
 
@@ -119,14 +132,11 @@ export function openIssue(id) {
       },
     });
 
-    // due date
-    body.querySelector('[data-due]').addEventListener('change', (e) => {
-      updateIssue(iss.id, { due: e.target.value || null },
-        e.target.value ? `set due date to ${e.target.value}` : 'cleared the due date');
-      flashSaved();
-    });
+    body.querySelector('[data-openparent]')?.addEventListener('click', (e) =>
+      openIssue(e.currentTarget.dataset.openparent));
 
     renderProps();
+    renderSubtasks();
     renderActivity();
   }
 
@@ -134,6 +144,8 @@ export function openIssue(id) {
     ta.style.height = 'auto';
     ta.style.height = `${ta.scrollHeight}px`;
   }
+
+  /* ---------- props ---------- */
 
   function renderProps() {
     const iss = issueById(currentId);
@@ -150,8 +162,7 @@ export function openIssue(id) {
       ? `${avatarHTML(m)}<span>${esc(m.name.split(' ')[0])}</span>`
       : `<span class="ph">Unassigned</span>`;
 
-    const lblBtn = body.querySelector('[data-prop="labels"]');
-    lblBtn.innerHTML = iss.labels.length
+    body.querySelector('[data-prop="labels"]').innerHTML = iss.labels.length
       ? `<span class="prop-multi">${iss.labels.map(labelChip).join('')}</span>`
       : `<span class="ph">Labels</span>`;
 
@@ -162,9 +173,190 @@ export function openIssue(id) {
 
     const c = iss.cycle ? cycleOf(iss.cycle) : null;
     body.querySelector('[data-prop="cycle"]').innerHTML = c
-      ? `<span class="ph" style="color:var(--text)"><b>${esc(c.name)}</b></span>`
+      ? `<span style="color:var(--text)"><b>${esc(c.name)}</b></span>`
       : `<span class="ph">Cycle</span>`;
+
+    body.querySelector('[data-prop="due"]').innerHTML = iss.due
+      ? `${ico('calendar', 12)}<span>${esc(dueLabel(iss.due))}</span>`
+      : `<span class="ph">Due date</span>`;
   }
+
+  function dueLabel(iso) {
+    const diff = Math.round((new Date(iso + 'T12:00') - new Date(todayStr() + 'T12:00')) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    return new Date(iso + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+  function isoAddDays(base, n) {
+    const d = base ? new Date(base + 'T12:00') : new Date();
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  /* ---------- subtasks ---------- */
+
+  function renderSubtasks() {
+    const iss = issueById(currentId);
+    if (!iss) return;
+    const host = body.querySelector('[data-subtasks]');
+    if (!host) return;
+    const kids = childrenIssues(iss.id);
+    const closed = kids.filter(k => ['done', 'canceled'].includes(k.status)).length;
+
+    host.innerHTML = `
+      <div class="subsec-head">
+        <span class="caps">Subtasks</span>
+        ${kids.length ? `
+          <span class="count-pill">${closed}/${kids.length}</span>
+          <span class="sub-progress"><i style="width:${kids.length ? closed / kids.length * 100 : 0}%"></i></span>` : ''}
+        <span style="flex:1"></span>
+        <button class="btn ai-btn sm" data-generate title="Generate subtasks with AI">${ico('sparkles', 12)} Generate</button>
+      </div>
+      <div data-kids>
+        ${kids.map(k => {
+          const done = ['done', 'canceled'].includes(k.status);
+          return `
+          <div class="subrow ${done ? 'done' : ''}" data-kid="${k.id}">
+            <span data-toggle="${k.id}" style="display:inline-flex;cursor:pointer" title="${done ? 'Reopen' : 'Mark done'}">
+              ${statusIcon(done ? 'done' : k.status, statusOf(k.status).color, 14)}
+            </span>
+            <span class="sr-title">${esc(k.title || 'Untitled')}</span>
+            <span class="ir-pri">${priIcon(k.priority, 12)}</span>
+            ${memberOf(k.assignee) ? avatarHTML(memberOf(k.assignee)) : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="sub-add">
+        ${ico('plus', 13)}
+        <input data-addsub placeholder="Add a subtask and press ↵"/>
+      </div>`;
+
+    // toggle done
+    host.querySelectorAll('[data-toggle]').forEach(el =>
+      el.onclick = (e) => {
+        e.stopPropagation();
+        const kid = issueById(el.dataset.toggle);
+        const nowDone = !['done', 'canceled'].includes(kid.status);
+        updateIssue(kid.id, { status: nowDone ? 'done' : 'todo' },
+          nowDone ? 'completed a subtask' : 'reopened a subtask');
+      });
+    // open kid on click
+    host.querySelectorAll('.subrow').forEach(row =>
+      row.onclick = () => openIssue(row.dataset.kid));
+    // inline composer
+    host.querySelector('[data-addsub]').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const val = e.currentTarget.value.trim();
+      if (!val) return;
+      createIssue({
+        title: val,
+        parent: iss.id,
+        project: iss.project,
+        cycle: iss.cycle,
+        labels: [...iss.labels],
+      });
+      toast('Subtask added');
+      e.currentTarget.value = '';
+      renderSubtasks();
+    });
+    // AI generate
+    host.querySelector('[data-generate]').onclick = () => aiSubtasks(iss);
+  }
+
+  async function aiSubtasks(iss) {
+    const key = S().settings.openrouterKey;
+    if (!key) {
+      toast('Connect an assistant first — Settings → AI');
+      return;
+    }
+    const desc = (iss.blocks || []).map(b =>
+      (b.html || '').replace(/<[^>]+>/g, ' ').trim()).join(' ').slice(0, 1400);
+    const source = `Title: ${iss.title || '(untitled)'}${desc ? `\nDetails: ${desc}` : ''}`;
+
+    openModal((modal, close) => {
+      modal.innerHTML = `
+        <div class="modal-head" style="padding-bottom:6px">
+          <span class="ai-orb" style="width:30px;height:30px;border-radius:10px">${ico('sparkles', 14)}</span>
+          <h3 style="font-family:var(--serif);font-weight:500;font-size:17px">Suggested subtasks</h3>
+          <span style="flex:1"></span><kbd>esc</kbd>
+        </div>
+        <div style="padding:10px 20px;color:var(--text-2);font-size:12.5px;line-height:1.5">
+          For <b>${esc(iss.title || 'this issue')}</b> — uncheck anything you don't want, adjust priorities, then create them all linked to this issue.
+        </div>
+        <div data-results style="padding:6px 18px 8px;min-height:120px">
+          <div class="skeleton" style="height:14px;margin:10px 0"></div>
+          <div class="skeleton" style="height:14px;margin:10px 0;width:85%"></div>
+          <div class="skeleton" style="height:14px;margin:10px 0;width:70%"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:10px 20px 16px">
+          <button class="btn ghost" data-cancel>Cancel</button>
+          <button class="btn primary" data-create disabled>Create subtasks</button>
+        </div>`;
+
+      modal.querySelector('[data-cancel]').onclick = close;
+
+      (async () => {
+        const messages = [
+          { role: 'system', content: 'You decompose issues into concrete, actionable subtasks. Respond ONLY with a JSON array — no prose, no markdown fences — of at most 6 objects shaped {"title":"imperative subtask","priority":"urgent|high|medium|low"}.' },
+          { role: 'user', content: source },
+        ];
+        let acc = '';
+        for await (const delta of chatStream({
+          key, model: S().ai.model, messages,
+        })) acc += delta;
+
+        const items = parseSubtasks(acc);
+        if (!items.length) throw new Error('The model did not return usable tasks. Try again or rephrase.');
+
+        const resEl = modal.querySelector('[data-results]');
+        resEl.innerHTML = items.map((it, i) => `
+          <div class="gen-item">
+            <input type="checkbox" checked data-i="${i}"/>
+            <span class="g-title">${esc(it.title)}</span>
+            <select data-p="${i}">
+              ${['urgent', 'high', 'medium', 'low', 'none'].map(p =>
+                `<option value="${p}" ${p === it.priority ? 'selected' : ''}>${p}</option>`).join('')}
+            </select>
+          </div>`).join('');
+
+        const btn = modal.querySelector('[data-create]');
+        const syncBtn = () => {
+          const n = [...resEl.querySelectorAll('input[type=checkbox]')].filter(c => c.checked).length;
+          btn.disabled = n === 0;
+          btn.textContent = `Create ${n || ''} subtask${n === 1 ? '' : 's'}`;
+        };
+        resEl.addEventListener('change', syncBtn);
+        syncBtn();
+
+        btn.onclick = () => {
+          let made = 0;
+          resEl.querySelectorAll('.gen-item').forEach((row, i) => {
+            if (!row.querySelector('input[type=checkbox]').checked) return;
+            createIssue({
+              title: items[i].title,
+              priority: row.querySelector('select').value,
+              parent: iss.id,
+              project: iss.project,
+              cycle: iss.cycle,
+              labels: [...iss.labels],
+            });
+            made++;
+          });
+          close();
+          toast(`Created ${made} subtask${made === 1 ? '' : 's'}`);
+          logAct(iss.id, `added ${made} subtasks via AI`);
+          renderAll();
+        };
+      })().catch((err) => {
+        modal.querySelector('[data-results]').innerHTML =
+          `<div class="ai-error">${esc(err.message)}</div>`;
+      });
+    }, { width: 560 });
+  }
+
+  /* ---------- activity ---------- */
 
   function renderActivity() {
     const iss = issueById(currentId);
@@ -226,7 +418,7 @@ export function openIssue(id) {
     if (s < 86400) return `${Math.floor(s / 3600)}h`;
     return `${Math.floor(s / 86400)}d`;
   };
-  const cap = (w) => w[0].toUpperCase() + w.slice(1);
+  const cap = (wd) => wd[0].toUpperCase() + wd.slice(1);
 
   /* ---------- property menus ---------- */
 
@@ -323,23 +515,85 @@ export function openIssue(id) {
         },
       });
     }
+    if (kind === 'due') {
+      openMenu({
+        anchor: btn, minWidth: 170,
+        items: [
+          { value: 'today', label: 'Today', icon: ico('calendar', 14), checked: iss.due === todayStr() },
+          { value: 'tomorrow', label: 'Tomorrow', icon: ico('calendar', 14), checked: iss.due === isoAddDays(todayStr(), 1) },
+          { value: 'week', label: 'Next week', icon: ico('calendar', 14), checked: iss.due === isoAddDays(todayStr(), 7) },
+          { value: 'custom', label: 'Pick a date…', icon: ico('pen', 14) },
+          { sep: true },
+          { value: 'clear', label: 'Clear due date', icon: ico('x', 14), danger: !iss.due },
+        ],
+        onSelect: (v) => {
+          if (v === 'custom') { inlineDatePicker(btn, iss); return; }
+          const due = v === 'clear' ? null
+            : v === 'today' ? todayStr()
+            : v === 'tomorrow' ? isoAddDays(todayStr(), 1)
+            : isoAddDays(todayStr(), 7);
+          updateIssue(iss.id, { due }, due ? `set due date` : 'cleared the due date');
+          flashSaved();
+        },
+      });
+    }
   });
 
-  /* ---------- more menu ---------- */
+  /** swaps the due prop button into a real date input, commits on change */
+  function inlineDatePicker(btn, iss) {
+    const inp = document.createElement('input');
+    inp.type = 'date';
+    inp.className = 'input';
+    inp.value = iss.due || todayStr();
+    inp.style.cssText = 'padding:3px 6px;font-size:12px;background:none;width:100%';
+    btn.replaceWith(inp);
+    inp.focus();
+    inp.showPicker?.();
+    const commit = () => {
+      updateIssue(iss.id, { due: inp.value || null },
+        inp.value ? 'set due date' : 'cleared the due date');
+      flashSaved();
+      renderAll();
+    };
+    inp.addEventListener('change', commit);
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape') { e.stopPropagation(); commit(); }
+    });
+  }
+
+  /* ---------- bar actions ---------- */
+
+  wrap.querySelector('[data-copylink]').onclick = () => {
+    const url = `${location.origin}${location.pathname}#/issue/${currentId}`;
+    navigator.clipboard.writeText(url).then(
+      () => toast('Link copied'),
+      () => toast(url),
+    );
+  };
 
   wrap.querySelector('[data-more]').onclick = (e) => {
     const idxInStore = S().issues.findIndex(i => i.id === currentId);
     openMenu({
       anchor: e.currentTarget,
       items: [
+        { value: 'copylink', label: 'Copy link', icon: ico('key', 14) },
+        { value: 'dup', label: 'Duplicate issue', icon: ico('copy', 14) },
         { value: 'duetoday', label: 'Due today', icon: ico('calendar', 14) },
         { value: 'clearDue', label: 'Clear due date', icon: ico('x', 14) },
         { sep: true },
         { value: 'del', label: 'Delete issue', icon: ico('trash', 14), danger: true, kbd: '⌫' },
       ],
       onSelect: (v) => {
+        if (v === 'copylink') {
+          const url = `${location.origin}${location.pathname}#/issue/${currentId}`;
+          navigator.clipboard.writeText(url).then(() => toast('Link copied'));
+        }
+        if (v === 'dup') {
+          const copy = duplicateIssue(currentId);
+          toast(`${issueRef(copy)} created`);
+        }
         if (v === 'duetoday') {
-          updateIssue(currentId, { due: new Date().toISOString().slice(0, 10) }, 'set due date to today');
+          updateIssue(currentId, { due: todayStr() }, 'set due date to today');
           flashSaved();
         }
         if (v === 'clearDue') { updateIssue(currentId, { due: null }); flashSaved(); }
@@ -347,17 +601,18 @@ export function openIssue(id) {
           const snap = deleteIssue(currentId);
           close();
           if (snap) {
-            toast(`Deleted ${issueRef(snap)}`, {
-              action: { label: 'Undo', fn: () => {
-                S().issues.splice(Math.min(idxInStore, S().issues.length), 0, snap);
-                emit();
-              }},
+            toast(`Deleted ${issueRef(snap.snap)}`, {
+              action: { label: 'Undo', fn: () => { restoreFromSnap(snap); } },
             });
           }
         }
       },
     });
   };
+
+  function restoreFromSnap({ snap, idx }) {
+    import('./store.js').then(m => m.restoreIssue({ snap, idx }));
+  }
 
   /* saved indicator */
   const saveDot = wrap.querySelector('.save-dot');
@@ -373,16 +628,22 @@ export function openIssue(id) {
   return { close };
 }
 
-/* convenience used by board/list context menus */
-export function quickStatus(issueId, anchorEl) {
-  const iss = issueById(issueId);
-  if (!iss) return;
-  openMenu({
-    anchor: anchorEl, minWidth: 180,
-    items: S().statuses.map((st) => ({
-      value: st.id, label: st.name, icon: statusIcon(st.id, st.color, 14),
-      checked: st.id === iss.status,
-    })),
-    onSelect: (v) => updateIssue(issueId, { status: v }, `changed status to ${statusOf(v).name}`),
-  });
+function parseSubtasks(raw = '') {
+  try {
+    let t = raw.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '');
+    const start = t.indexOf('[');
+    const end = t.lastIndexOf(']');
+    if (start === -1 || end === -1) return [];
+    const arr = JSON.parse(t.slice(start, end + 1));
+    const okPri = new Set(['urgent', 'high', 'medium', 'low']);
+    return arr
+      .map(x => ({
+        title: String(x?.title ?? x ?? '').trim().slice(0, 140),
+        priority: okPri.has(x?.priority) ? x.priority : 'medium',
+      }))
+      .filter(x => x.title.length > 1)
+      .slice(0, 8);
+  } catch {
+    return [];
+  }
 }

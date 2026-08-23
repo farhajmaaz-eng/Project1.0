@@ -132,7 +132,7 @@ export function openPalette(initialQuery = '') {
           html += `
             <button class="pal-item ${idx === sel ? 'sel' : ''}" data-idx="${idx}">
               ${iconHTML}
-              <span>${markHtml(it.label, it.marks)}</span>
+              <span class="pi-label">${markHtml(it.label, it.marks)}</span>
               ${it.kbd ? `<kbd>${esc(it.kbd)}</kbd>` : it.sub ? `<span class="pi-sub">${esc(it.sub)}</span>` : ''}
             </button>`;
           flat.push(it);

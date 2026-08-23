@@ -80,6 +80,10 @@ export const docById = (id) => state?.docs.find(d => d.id === id) || null;
 
 export const issueRef = (iss) => `${state.settings.keyPrefix}-${iss.key}`;
 
+export function childrenIssues(parentId) {
+  return state.issues.filter(i => i.parent === parentId).sort((a, b) => a.key - b.key);
+}
+
 export function activeCycle() {
   if (!state) return null;
   const now = new Date().toISOString().slice(0, 10);
@@ -149,6 +153,7 @@ export function createIssue(patch = {}) {
     id: uid('i'), key: nextKeyNum(), title: '', blocks: [],
     status: st, priority: 'none', assignee: null,
     labels: [], project: patch.project ?? null, cycle: patch.cycle ?? null,
+    parent: null,
     due: null, order: maxOrder + 10,
     comments: [], activity: [{ id: uid('a'), at: Date.now(), actorId: 'me', text: 'created the issue' }],
     createdAt: Date.now(), updatedAt: Date.now(),
@@ -158,6 +163,21 @@ export function createIssue(patch = {}) {
   touchRecent('issues', iss.id);
   emit();
   return iss;
+}
+
+/** near-faithful clone; fresh identity + timestamps */
+export function duplicateIssue(id) {
+  const src = issueById(id);
+  if (!src) return null;
+  return createIssue({
+    ...JSON.parse(JSON.stringify(src)),
+    title: `${src.title || 'Untitled'} (copy)`,
+    comments: [],
+    blocks: JSON.parse(JSON.stringify(src.blocks || [])),
+    activity: [{ id: uid('a'), at: Date.now(), actorId: 'me', text: 'duplicated from ' + issueRef(src) }],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
 }
 
 export function updateIssue(id, patch, actText) {

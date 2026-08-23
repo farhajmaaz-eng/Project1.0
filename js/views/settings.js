@@ -127,12 +127,6 @@ function workspaceSection(s) {
 function aiSection(s) {
   const el = document.createElement('div');
   const hasKey = !!s.settings.openrouterKey;
-  const modelOptions = [
-    ...CURATED_MODELS,
-    ...(s.ai.modelsCache || [])
-      .filter(id => !CURATED_MODELS.some(c => c.id === id))
-      .map(id => ({ id, label: id })),
-  ];
   el.innerHTML = `
     <section class="set-section">
       <h2>AI assistant</h2>
@@ -150,11 +144,11 @@ function aiSection(s) {
       </div>
       <div class="set-row">
         <div class="sr-main"><b>Model</b><span>Used by the assistant page</span></div>
-        <select class="input" data-model style="width:min(340px,60%);height:34px">
-          ${!modelOptions.some(m => m.id === s.ai.model)
-            ? `<option value="${esc(s.ai.model)}" selected>${esc(s.ai.model)}</option>` : ''}
-          ${modelOptions.map(m => `<option value="${esc(m.id)}" ${m.id === s.ai.model ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}
-        </select>
+        <button class="btn ghost" data-model style="width:min(340px,60%);justify-content:flex-start;gap:8px">
+          ${ico('bot', 13)}
+          <span style="flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.ai.model)}</span>
+          ${ico('chev', 12)}
+        </button>
       </div>
       <div class="set-row">
         <div class="sr-main"><b>Connection</b><span>Send a tiny test request</span></div>
@@ -297,10 +291,18 @@ function wireSection(sec, body, view) {
       toast('Key removed');
       renderSettings(view.closest('.view') || document.getElementById('view'));
     });
-    body.querySelector('[data-model]').addEventListener('change', (e) => {
-      setAI({ model: e.target.value });
-      toast(`Model set to ${e.target.value.split('/').pop()}`);
-    });
+    body.querySelector('[data-model]').onclick = () => {
+      import('./ai.js').then(({ openModelPicker }) => {
+        openModelPicker({
+          current: S().ai.model,
+          onPick: (id) => {
+            setAI({ model: id });
+            body.querySelector('[data-model] span').textContent = id;
+            toast(`Model set to ${id.split('/').pop()}`);
+          },
+        });
+      });
+    };
   }
 
   if (sec === 'appearance') {
