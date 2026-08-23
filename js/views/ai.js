@@ -4,11 +4,11 @@
    requests go browser → openrouter.ai directly.
 --------------------------------------------------------------------------- */
 
-import { esc, sleep } from './../util.js';
+import { esc, htmlToText } from './../util.js';
 import { ico } from './../icons.js';
 import {
   S, you, setSetting, setAI, pushMessage, emit, status as statusOf,
-  issueRef, project as projectOf,
+  issueRef, project as projectOf, docPath,
 } from './../store.js';
 import { toast } from './../ui.js';
 import { renderMarkdown } from './../md.js';
@@ -70,6 +70,16 @@ function renderSetup(shell) {
 
 /* ---------------- chat ---------------- */
 
+function docBodyText(d) {
+  return (d.blocks || []).map(b => {
+    if (b.type === 'table' && Array.isArray(b.rows)) {
+      return b.rows.map(r => r.map(c => htmlToText(c)).join(' | ')).join('\n');
+    }
+    if (b.type === 'divider') return '';
+    return htmlToText(b.html || '');
+  }).filter(Boolean).join('\n').trim();
+}
+
 function buildContext() {
   const s = S();
   const lines = [];
@@ -79,17 +89,45 @@ function buildContext() {
   }
   const cyc = activeCycleInfo();
   if (cyc) lines.push(`Active cycle: ${cyc.name} (${cyc.startsAt} → ${cyc.endsAt})${cyc.goal ? `, goal: ${cyc.goal}` : ''}`);
+
+  /* issues — with descriptions so the assistant can actually read them */
   const open = s.issues.filter(i => !['done', 'canceled'].includes(i.status));
-  if (open.length) {
-    lines.push(`Open issues (${open.length}):`);
-    for (const i of open.slice(0, 40)) {
+  const recentDone = s.issues.filter(i => i.status === 'done')
+    .sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
+  if (open.length || recentDone.length) {
+    lines.push('', 'ISSUES');
+    for (const i of open.slice(0, 30)) {
       const pr = projectOf(i.project)?.name || '';
-      lines.push(`- ${issueRef(i)} [${statusOf(i.status).name}|${i.priority}] ${i.title || '(untitled)'}${pr ? ` — ${pr}` : ''}${i.due ? `, due ${i.due}` : ''}`);
+      const desc = (i.blocks || []).map(b => htmlToText(b.html)).join(' ').replace(/\s+/g, ' ').trim().slice(0, 260);
+      lines.push(`- ${issueRef(i)} [${statusOf(i.status).name}|${i.priority}] ${i.title || '(untitled)'}`
+        + `${pr ? ` — ${pr}` : ''}${i.due ? `, due ${i.due}` : ''}`
+        + (desc ? `\n  ${desc}` : ''));
     }
-    if (open.length > 40) lines.push(`…and ${open.length - 40} more`);
+    if (open.length > 30) lines.push(`…and ${open.length - 30} more open issues`);
+    if (recentDone.length) {
+      lines.push(`Recently completed: ${recentDone.map(i => issueRef(i) + ' ' + (i.title || '')).join('; ')}`);
+    }
   }
-  const docs = s.docs.slice(-10);
-  if (docs.length) lines.push(`Recent pages: ${docs.map(d => d.title || 'Untitled').join('; ')}`);
+
+  /* documents — full contents, budgeted */
+  const docs = s.docs
+    .filter(d => !d.trashed)
+    .filter(d => d.blocks.some(b => htmlToText(b.html).trim()) || (d.blocks || []).some(b => b.type === 'table'))
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  if (docs.length) {
+    lines.push('', 'DOCUMENTS (current full text)');
+    const perDoc = Math.max(500, Math.floor(14000 / docs.length));
+    let used = 0, shown = 0;
+    for (const d of docs) {
+      if (used > 15000) { lines.push(`…${docs.length - shown} more documents omitted for length.`); break; }
+      const path = docPath(d.id).map(x => x.title || 'Untitled').join(' / ');
+      let body = docBodyText(d);
+      if (!body) body = '(empty page)';
+      if (body.length > perDoc) body = body.slice(0, perDoc) + ' …(truncated)';
+      lines.push(`\n### ${path}\n${body}`);
+      used += body.length; shown++;
+    }
+  }
   return lines.join('\n');
 }
 
@@ -98,11 +136,38 @@ function activeCycleInfo() {
   return S().cycles.find(c => c.startsAt <= now && c.endsAt >= now) || null;
 }
 
+/* Some models (Qwen-style templates especially) hallucinate tool-call tokens.
+   We provide no tools — strip any such artifacts out of the stream. */
+const TOOL_PATTERNS = [
+  /<\|[a-z_]+(?:\|[^|>]*)?>/gi,                       // <|tool_call_start|>, <|im_end|>…
+  /<tool_call[^>]*>[\s\S]*?<\/tool_call>/gi,          // <tool_call>{json}</tool_call>
+  /<\/?(?:tool_response|function_call|function_result)[^>]*>/gi,
+  /\[(?:read|write|edit|search|list_files|read_file|open_file|get_file|run)\([^\]\n]{0,240}\)\]/gi,
+];
+export function sanitizeAIText(s = '') {
+  for (const p of TOOL_PATTERNS) s = s.replace(p, '');
+  return s;
+}
+/** stream-safe: also hides a trailing fragment that could be a half-arrived tag */
+function cleanForDisplay(raw = '') {
+  let s = sanitizeAIText(raw);
+  s = s.replace(/\[[^\]\n]{0,80}\([^)\]]*$/, ''); // dangling [read(path='…
+  const m = s.match(/(?:<[^<>]{0,60}|<\|[^|]{0,40})$/);
+  if (m) s = s.slice(0, m.index);
+  return s;
+}
+
 function systemPrompt(useContext) {
   let p = 'You are Tessera\u2019s assistant, embedded in a personal issue tracker + docs workspace. ';
   p += 'Be concise, concrete and practical. Prefer markdown with short lists. ';
   p += 'When asked to plan or break work down, suggest issues with clear titles and acceptance criteria. ';
-  p += 'Never invent issues that were not listed in the context.';
+  p += '\n\nIMPORTANT RULES:';
+  p += '\n1. You have NO tools, NO file access and NO function calling. Never emit tool-call syntax of any kind';
+  p += ' — no <|tool_call_start|>, no <tool_call>, no [read(...)] style markers. Answer in plain markdown only.';
+  p += '\n2. When WORKSPACE CONTEXT is provided it contains the user\u2019s real issues and the current text of their documents.';
+  p += ' Treat it as ground truth: quote real issue keys (e.g. KES-3), real page titles and real details from it.';
+  p += ' If something is not in the context, say you don\u2019t have it rather than inventing it.';
+  p += '\n3. To change data, describe exactly what to change — the user applies edits in the app.';
   if (useContext) p += '\n\nWORKSPACE CONTEXT\n' + buildContext();
   return p;
 }
@@ -292,7 +357,7 @@ function renderChat(shell) {
       if (framePending) return;
       framePending = true;
       requestAnimationFrame(() => {
-        mdHost.innerHTML = renderMarkdown(acc) + '<span class="stream-cursor"></span>';
+        mdHost.innerHTML = renderMarkdown(cleanForDisplay(acc)) + '<span class="stream-cursor"></span>';
         scrollDown();
         framePending = false;
       });
@@ -305,13 +370,13 @@ function renderChat(shell) {
         messages: msgs,
         signal: streaming.signal,
       })) {
-        if (!acc) mdHost.innerHTML = '<span class="stream-cursor"></span>';
         acc += delta;
         paintStream();
       }
-      pushMessage('assistant', acc || '(empty response)');
+      const clean = sanitizeAIText(acc).trim() || '(empty response)';
+      pushMessage('assistant', clean);
       holder.remove();
-      appendMsg('assistant', acc);
+      appendMsg('assistant', clean);
       scrollDown();
     } catch (err) {
       if (err.name === 'AbortError') {

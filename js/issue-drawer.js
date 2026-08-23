@@ -15,6 +15,7 @@ import { toast, openMenu, openModal } from './ui.js';
 import { avatarHTML, labelChip } from './bits.js';
 import { mountEditor } from './editor.js';
 import { chatStream } from './openrouter.js';
+import { sanitizeAIText } from './views/ai.js';
 
 let current = null; // active drawer handle
 let currentId = null;
@@ -307,7 +308,7 @@ export function openIssue(id) {
           key, model: S().ai.model, messages,
         })) acc += delta;
 
-        const items = parseSubtasks(acc);
+        const items = parseSubtasks(sanitizeAIText(acc));
         if (!items.length) throw new Error('The model did not return usable tasks. Try again or rephrase.');
 
         const resEl = modal.querySelector('[data-results]');

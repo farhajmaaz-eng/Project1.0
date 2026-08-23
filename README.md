@@ -51,6 +51,11 @@ Open http://localhost:8080, create your workspace, go. GitHub Pages works as-is.
 - **Real onboarding** — local signup/sign-in (salted SHA-256, no plaintext),
   session gating, sign out, and a workspace that starts empty instead of
   pretending to be someone else's.
+- **AI that reads your workspace** — context injection includes real issue
+  descriptions and the current text of every document; the assistant quotes
+  actual keys and page details instead of guessing.
+- **Clean output** — model-specific tool-call artifacts (<|tool_call_start|>,
+  [read(...)], etc.) are stripped from streams, replies and stored history.
 - **AI assistant** — plug in an OpenRouter key from Settings → AI and get
   streaming chat with markdown rendering, a model picker (full catalog fetched
   live), optional workspace context ("summarize my open issues" actually reads
