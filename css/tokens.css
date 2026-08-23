@@ -1,77 +1,86 @@
 /* ---------------------------------------------------------------------------
-   Tessera · design tokens v2
+   Tessera · design tokens v3 — "Iris"
+   Cool porcelain & indigo night, one violet thread through everything.
 --------------------------------------------------------------------------- */
 
 [data-theme="dark"] {
-  --bg:        #0d0d10;
-  --bg-2:      #121217;
-  --surface:   #16161c;
-  --raise:     #1d1d25;
-  --hover:     rgba(233, 230, 222, 0.05);
-  --active:    rgba(233, 230, 222, 0.09);
+  --bg:        #0a0b11;
+  --bg-2:      #0e1018;
+  --surface:   #12141d;
+  --raise:     #191c28;
+  --well:      #0d0f17;
+  --hover:     rgba(227, 229, 246, 0.05);
+  --active:    rgba(227, 229, 246, 0.09);
 
-  --line:      rgba(233, 230, 222, 0.07);
-  --line-2:    rgba(233, 230, 222, 0.14);
+  --line:      rgba(227, 229, 246, 0.075);
+  --line-2:    rgba(227, 229, 246, 0.15);
 
-  --text:      #eceae5;
-  --text-2:    #a8a4ae;
-  --text-3:    #726e7a;
+  --text:      #ecedf6;
+  --text-2:    #9ba1b7;
+  --text-3:    #656b81;
 
-  --accent:       #d9a05b;
-  --accent-hover: #e7b476;
-  --accent-dim:   rgba(217, 160, 91, 0.13);
-  --accent-faint: rgba(217, 160, 91, 0.06);
-  --on-accent:    #221507;
+  --accent:       #8f80f3;
+  --accent-hover: #a497ff;
+  --accent-2:     #c08afc;
+  --accent-dim:   rgba(143, 128, 243, 0.16);
+  --accent-faint: rgba(143, 128, 243, 0.065);
+  --on-accent:    #150f31;
 
-  --danger:    #e5484d;
-  --danger-dim:rgba(229, 72, 77, 0.13);
-  --ok:        #58b98c;
-  --warn:      #e2b93d;
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
 
-  --scrim:     rgba(6, 6, 9, 0.58);
+  --danger:    #f25f6b;
+  --danger-dim:rgba(242, 95, 107, 0.13);
+  --ok:        #41cf94;
+  --warn:      #ecb44d;
 
-  --shadow-1:  0 1px 2px rgba(0,0,0,.4), 0 0 0 1px var(--line);
-  --shadow-2:  0 4px 12px rgba(0,0,0,.35), 0 16px 40px rgba(0,0,0,.35), 0 0 0 1px var(--line);
-  --shadow-3:  0 8px 20px rgba(0,0,0,.4), 0 30px 80px rgba(0,0,0,.5), 0 0 0 1px var(--line-2);
+  --scrim:     rgba(4, 5, 12, 0.64);
 
-  --code-bg:   #191921;
+  --shadow-1:  0 1px 2px rgba(2,3,10,.5), 0 0 0 1px var(--line);
+  --shadow-2:  0 2px 6px rgba(2,3,10,.45), 0 18px 44px rgba(2,3,10,.42), 0 0 0 1px var(--line);
+  --shadow-3:  0 6px 18px rgba(2,3,10,.5), 0 32px 90px rgba(2,3,10,.55), 0 0 0 1px var(--line-2);
+
+  --code-bg:   #151827;
 
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --bg:        #faf9f6;
-  --bg-2:      #f1efe9;
+  --bg:        #f7f7fb;
+  --bg-2:      #efeff5;
   --surface:   #ffffff;
-  --raise:     #fbfaf7;
-  --hover:     rgba(38, 31, 21, 0.045);
-  --active:    rgba(38, 31, 21, 0.09);
+  --raise:     #fbfbfe;
+  --well:      #f1f1f7;
+  --hover:     rgba(30, 29, 51, 0.05);
+  --active:    rgba(30, 29, 51, 0.085);
 
-  --line:      rgba(38, 31, 21, 0.09);
-  --line-2:    rgba(38, 31, 21, 0.17);
+  --line:      rgba(30, 29, 51, 0.08);
+  --line-2:    rgba(30, 29, 51, 0.16);
 
-  --text:      #272219;
-  --text-2:    #6f6960;
-  --text-3:    #9a948a;
+  --text:      #22232e;
+  --text-2:    #61657a;
+  --text-3:    #8f93a6;
 
-  --accent:       #a06b22;
-  --accent-hover: #8a5a1a;
-  --accent-dim:   rgba(160, 107, 34, 0.11);
-  --accent-faint: rgba(160, 107, 34, 0.055);
-  --on-accent:    #fff8ee;
+  --accent:       #5b4bd6;
+  --accent-hover: #4c3cc6;
+  --accent-2:     #9a4ce0;
+  --accent-dim:   rgba(91, 75, 214, 0.11);
+  --accent-faint: rgba(91, 75, 214, 0.055);
+  --on-accent:    #ffffff;
 
-  --danger:    #cc3d42;
-  --danger-dim:rgba(204, 61, 66, 0.10);
-  --ok:        #2e8f63;
-  --warn:      #b98a1d;
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
 
-  --scrim:     rgba(44, 38, 30, 0.35);
+  --danger:    #d23b4d;
+  --danger-dim:rgba(210, 59, 77, 0.09);
+  --ok:        #17996d;
+  --warn:      #a97a13;
 
-  --shadow-1:  0 1px 2px rgba(40,32,20,.05), 0 0 0 1px var(--line);
-  --shadow-2:  0 4px 10px rgba(40,32,20,.06), 0 14px 36px rgba(40,32,20,.10), 0 0 0 1px var(--line);
-  --shadow-3:  0 10px 24px rgba(40,32,20,.08), 0 30px 70px rgba(40,32,20,.16), 0 0 0 1px var(--line-2);
+  --scrim:     rgba(35, 35, 56, 0.38);
 
-  --code-bg:   #f1efe8;
+  --shadow-1:  0 1px 2px rgba(30,28,60,.06), 0 0 0 1px var(--line);
+  --shadow-2:  0 2px 6px rgba(30,28,60,.05), 0 16px 40px rgba(30,28,60,.10), 0 0 0 1px var(--line);
+  --shadow-3:  0 8px 20px rgba(30,28,60,.07), 0 32px 80px rgba(30,28,60,.16), 0 0 0 1px var(--line-2);
+
+  --code-bg:   #eef0f7;
 
   color-scheme: light;
 }
@@ -81,16 +90,19 @@
   --serif: "Fraunces", Georgia, serif;
   --mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --r-s: 7px;
-  --r-m: 10px;
-  --r-l: 14px;
-  --r-xl: 18px;
+  --r-s: 8px;
+  --r-m: 11px;
+  --r-l: 15px;
+  --r-xl: 20px;
 
   --sidebar-w: 264px;
 
   --ease:     cubic-bezier(.25, .7, .3, 1);
   --ease-out: cubic-bezier(.22, .9, .3, 1);
   --spring:   cubic-bezier(.32, 1.35, .45, 1);
+
+  /* focus halo — resolves against whichever theme is active */
+  --halo: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
 
   --tabbar-h: 58px;
 

@@ -15,7 +15,7 @@ export function blocksToMarkdown(blocks = [], title = '') {
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/?(b|strong)>/gi, '**')
       .replace(/<\/?(i|em)>/gi, '_')
-      .replace(/<s|strike[^>]*>/g, '~~').replace(/<\/(s|strike)>/g, '~~')
+      .replace(/<\/?(s|strike)>/gi, '~~')
       .replace(/<code>/g, '`').replace(/<\/code>/g, '`')
       .replace(/<[^>]+>/g, '');
     const t = text; // already entity-escaped in model; leave as-is for md

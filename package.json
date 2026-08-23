@@ -1,6 +1,6 @@
 {
   "name": "tessera",
-  "version": "1.0.0",
+  "version": "2.3.0",
   "private": true,
   "type": "module",
   "description": "A local-first workspace that blends an issue tracker with a docs tool. No backend, no build step.",

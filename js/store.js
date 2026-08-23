@@ -4,13 +4,16 @@
 --------------------------------------------------------------------------- */
 
 import { DEFAULT_MODEL } from './openrouter.js';
-import { uid } from './util.js';
+import { uid, cleanInline, esc, htmlToText } from './util.js';
 
 const KEY = 'tessera.v2';
 const listeners = new Set();
 
 let state = null;
 try { state = JSON.parse(localStorage.getItem(KEY)); } catch { /* reseed below */ }
+if (state && state.v === 2 && !state.views) {
+  state.views = []; // v2.0–v2.2 workspaces gain saved-views support
+}
 if (state && state.v !== 2) state = null;
 
 export const S = () => state;
@@ -26,7 +29,7 @@ export function initStateFor({ name, email, workspace, prefix }) {
       openrouterKey: '',
     },
     seq: 1,
-    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#d9a05b', you: true }],
+    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#8f80f3', you: true }],
     labels: [
       { id: 'bug', name: 'Bug', color: '#e5484d' },
       { id: 'feature', name: 'Feature', color: '#4cb782' },
@@ -56,8 +59,13 @@ export function initStateFor({ name, email, workspace, prefix }) {
 export function persist() {
   if (!state) return;
   try { localStorage.setItem(KEY, JSON.stringify(state)); }
-  catch (e) { console.warn('Tessera: could not save to localStorage', e); }
+  catch (e) {
+    console.warn('Tessera: could not save to localStorage', e);
+    lastPersistError = e; // surfaced as a toast by the UI layer
+  }
 }
+let lastPersistError = null;
+export const takePersistError = () => { const e = lastPersistError; lastPersistError = null; return e; };
 const save = (() => { let t; return () => { clearTimeout(t); t = setTimeout(persist, 180); }; })();
 persist();
 
@@ -179,8 +187,12 @@ export function createIssue(patch = {}) {
 export function duplicateIssue(id) {
   const src = issueById(id);
   if (!src) return null;
+  const clone = JSON.parse(JSON.stringify(src));
+  delete clone.id;   // fresh identity — a copy must never collide with its source
+  delete clone.key;
+  delete clone.order;
   return createIssue({
-    ...JSON.parse(JSON.stringify(src)),
+    ...clone,
     title: `${src.title || 'Untitled'} (copy)`,
     comments: [],
     blocks: JSON.parse(JSON.stringify(src.blocks || [])),
@@ -358,6 +370,31 @@ export function restoreDocs(snaps) {
   emit();
 }
 
+/* ---------- saved views ---------- */
+
+export function createView({ name, icon = '🔎', filters, groupBy }) {
+  const v = {
+    id: uid('v'), name: (name || 'Untitled view').trim(), icon,
+    filters: JSON.parse(JSON.stringify(filters || {})),
+    groupBy: groupBy || 'status',
+    createdAt: Date.now(),
+  };
+  state.views.push(v);
+  emit();
+  return v;
+}
+export const getView = (id) => state?.views.find(v => v.id === id) || null;
+export function updateView(id, patch) {
+  const v = getView(id);
+  if (!v) return;
+  Object.assign(v, patch);
+  emit();
+}
+export function deleteView(id) {
+  state.views = state.views.filter(v => v.id !== id);
+  emit();
+}
+
 /* misc */
 
 export function touchRecent(kind, id) {
@@ -389,7 +426,9 @@ export function pushMessage(role, content) {
 
 export function resetAll() {
   localStorage.removeItem(KEY);
-  location.hash = '#/home';
+  localStorage.removeItem('tessera.auth');
+  localStorage.removeItem('tessera.session');
+  location.hash = '#/welcome';
   location.reload();
 }
 
@@ -400,6 +439,31 @@ export function exportData() {
   return JSON.stringify(clone, null, 2);
 }
 
+/** imported files are untrusted: strip every tag/attribute outside the editor's
+    allowlist before the content ever reaches innerHTML */
+function sanitizeBlocks(blocks) {
+  if (!Array.isArray(blocks)) return [];
+  return blocks.map(b => {
+    if (b.type === 'table' && Array.isArray(b.rows)) {
+      b.rows = b.rows.map(row => Array.isArray(row) ? row.map(c => cleanInline(String(c ?? ''))) : []);
+      return b;
+    }
+    if (typeof b.html === 'string') b.html = cleanInline(b.html);
+    return b;
+  });
+}
+function sanitizeImported(ws) {
+  ws.issues.forEach(i => {
+    i.blocks = sanitizeBlocks(i.blocks || []);
+    i.title = String(i.title ?? '');
+    i.comments?.forEach(c => { c.body = htmlToText(String(c.body ?? '')); });
+  });
+  ws.docs.forEach(d => {
+    d.blocks = sanitizeBlocks(d.blocks || []);
+    d.title = String(d.title ?? '');
+  });
+}
+
 export function importData(json) {
   const next = JSON.parse(json);
   if (!next || typeof next !== 'object' || !Array.isArray(next.issues)) {
@@ -407,6 +471,9 @@ export function importData(json) {
   }
   next.v = 2;
   next.ai = next.ai || { model: DEFAULT_MODEL, useContext: true, thread: [] };
+  next.settings = next.settings || {};
+  delete next.settings.openrouterKey; // never trust (or carry over) keys from a file
+  sanitizeImported(next);
   state = next;
   persist();
   location.reload();

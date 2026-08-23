@@ -13,7 +13,7 @@ const LOGO = `
   <rect x="3" y="3" width="12" height="12" rx="3.5" fill="#88859e" opacity=".55"/>
   <rect x="17" y="3" width="12" height="12" rx="3.5" fill="#88859e" opacity=".75"/>
   <rect x="3" y="17" width="12" height="12" rx="3.5" fill="#88859e" opacity=".35"/>
-  <rect x="17" y="17" width="12" height="12" rx="6" fill="#d9a05b"/>
+  <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #8f80f3)"/>
 </svg>`;
 
 const POINTS = [
@@ -35,7 +35,7 @@ export function renderWelcome(view, mode = 'signup') {
             <rect x="3" y="3" width="12" height="12" rx="3.5" fill="currentColor"/>
             <rect x="17" y="3" width="12" height="12" rx="3.5" fill="currentColor"/>
             <rect x="3" y="17" width="12" height="12" rx="3.5" fill="currentColor"/>
-            <rect x="17" y="17" width="12" height="12" rx="6" fill="#d9a05b"/>
+            <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #8f80f3)"/>
           </svg>
         </div>
         <div class="wl-brand">${LOGO}<b>tessera</b></div>
@@ -76,7 +76,7 @@ export function renderWelcome(view, mode = 'signup') {
             </div>
             <div class="wl-field">
               <label for="f-pass">Password</label>
-              <input class="input" id="f-pass" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" placeholder="${isSignup ? 'At least 4 characters' : '••••••••'}" required/>
+              <input class="input" id="f-pass" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" placeholder="${isSignup ? 'At least 8 characters' : '••••••••'}" required/>
             </div>
             ${isSignup ? `
             <div class="wl-field">

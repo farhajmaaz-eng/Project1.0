@@ -2,11 +2,11 @@
    Tessera · main v2 — boot, auth gating, router, theme, shortcuts, motion
 --------------------------------------------------------------------------- */
 
-import { S, onChange } from './store.js';
+import { S, onChange, takePersistError, setSetting } from './store.js';
 import { renderSidebar, closeSidebar, wireSidebarScrim } from './sidebar.js';
 import { renderTabbar } from './tabbar.js';
 import { openPalette } from './palette.js';
-import { openModal, closeTopMenu, anyMenuOpen, anyModalOpen } from './ui.js';
+import { openModal, closeTopMenu, anyMenuOpen, anyModalOpen, toast } from './ui.js';
 import { isDrawerOpen } from './issue-drawer.js';
 import { esc } from './util.js';
 import { ico } from './icons.js';
@@ -32,9 +32,8 @@ export function applyThemeFromSettings() {
 
 export function cycleTheme() {
   const cur = document.documentElement.dataset.theme;
-  if (S()) S().settings.theme = cur === 'light' ? 'dark' : 'light';
+  if (S()) setSetting('theme', cur === 'light' ? 'dark' : 'light');
   applyThemeFromSettings();
-  import('./store.js').then(m => m.persist());
 }
 
 /* ---------- routes ---------- */
@@ -170,6 +169,15 @@ function playReveal() {
 }
 
 window.addEventListener('hashchange', route);
+
+/* surface persistence failures (quota exceeded, private mode) instead of
+   silently dropping writes */
+let warnedStorage = false;
+onChange(() => {
+  if (warnedStorage || !takePersistError()) return;
+  warnedStorage = true;
+  toast('Couldn\u2019t save — storage is full or blocked. Export your workspace from Settings.', { timeout: 10000 });
+});
 
 /* ---------- global shortcuts ---------- */
 

@@ -79,3 +79,38 @@ export function emptyState(iconName, title, body, actionHTML = '') {
       ${actionHTML}
     </div>`;
 }
+
+/** SVG progress ring — used by cycles, projects and home */
+export function progressRing(pct, { size = 44, stroke = 4, color = 'var(--accent)', label } = {}) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - Math.min(1, Math.max(0, pct / 100)));
+  return `
+    <span class="pring" style="width:${size}px;height:${size}px" role="img" aria-label="${pct}%">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
+          stroke="var(--line-2)" stroke-width="${stroke}"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
+          stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
+          stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+          transform="rotate(-90 ${size / 2} ${size / 2})"
+          style="transition:stroke-dashoffset .6s var(--ease-out)"/>
+      </svg>
+      <b class="pring-num mono">${label ?? `${Math.round(pct)}%`}</b>
+    </span>`;
+}
+
+/** tiny inline sparkline (polyline) for cycle burn-up */
+export function sparkline(values, { w = 150, h = 34, color = 'var(--accent)' } = {}) {
+  const max = Math.max(1, ...values);
+  const step = values.length > 1 ? w / (values.length - 1) : w;
+  const pts = values.map((v, i) =>
+    `${(i * step).toFixed(1)},${(h - (v / max) * (h - 4) - 2).toFixed(1)}`).join(' ');
+  return `
+    <svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${w}" cy="${(h - (values[values.length - 1] / max) * (h - 4) - 2).toFixed(1)}"
+        r="2.6" fill="${color}"/>
+    </svg>`;
+}

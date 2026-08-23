@@ -70,8 +70,7 @@ export function relDay(iso) {
   if (d === 1) return 'Tomorrow';
   if (d === -1) return 'Yesterday';
   const dt = asDate(iso);
-  const label = `${MONTHS[dt.getMonth()]} ${dt.getDate()}`;
-  return d < -1 ? label : dt.toLocaleDateString(undefined, { weekday: 'short' }) === label ? label : label;
+  return d < -1 ? `${MONTHS[dt.getMonth()]} ${dt.getDate()}` : dt.toLocaleDateString(undefined, { weekday: 'short' });
 }
 
 /** short due badge: overdue/today get colored classes upstream */
