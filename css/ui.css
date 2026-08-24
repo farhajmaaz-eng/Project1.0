@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Tessera · floating UI v3 — menus, modals, drawer, palette, toasts
+   Tessera · floating UI v4 — menus, modals, drawer, palette, toasts
 --------------------------------------------------------------------------- */
 
 /* ---- dropdown menu ---- */
@@ -11,13 +11,13 @@
   background: var(--raise);
   border: 1px solid var(--line-2);
   border-radius: 13px;
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-2), 0 24px 60px -20px rgba(2,3,10,.5);
   padding: 5px;
-  animation: menu-in .16s var(--ease-out);
+  animation: menu-in .18s var(--spring);
   transform-origin: top left;
 }
 @keyframes menu-in {
-  from { opacity: 0; transform: translateY(-5px) scale(.97); }
+  from { opacity: 0; transform: translateY(-6px) scale(.95); }
 }
 .menu-item {
   display: flex; align-items: center; gap: 9px;
@@ -27,7 +27,12 @@
   font-size: 13px; text-align: left;
   color: var(--text);
   line-height: 1.3;
-  transition: background .1s;
+  transition: background .1s, transform .12s var(--ease);
+}
+/* cascade — each item drifts in a beat after the last (JS sets --i) */
+.menu-item { animation: menu-item-in .22s var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 16ms); }
+@keyframes menu-item-in {
+  from { opacity: 0; transform: translateX(-5px); }
 }
 .menu-item .mi-ic { color: var(--text-3); flex: none; display: inline-flex; }
 .menu-item .mi-label {
@@ -58,21 +63,27 @@
   -webkit-backdrop-filter: blur(4px) saturate(1.2);
   animation: fade-in .18s ease;
   display: flex; align-items: flex-start; justify-content: center;
+  transition: opacity .16s ease;
 }
+.scrim.closing { opacity: 0; }
 
 .modal {
   margin-top: 12vh;
   width: min(660px, calc(100vw - 32px));
   background: var(--surface);
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-3);
-  animation: modal-in .24s var(--spring);
+  box-shadow: var(--shadow-3), 0 40px 120px -30px rgba(2,3,10,.55);
+  animation: modal-in .3s cubic-bezier(.3, 1.4, .42, 1);
   overflow: hidden;
   max-height: 78vh;
   display: flex; flex-direction: column;
 }
+.modal.closing { animation: modal-out .14s ease forwards; }
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(16px) scale(.96); }
+  from { opacity: 0; transform: translateY(22px) scale(.93); filter: blur(4px); }
+}
+@keyframes modal-out {
+  to { opacity: 0; transform: translateY(10px) scale(.97); }
 }
 .modal-head {
   display: flex; align-items: center; gap: 10px;
@@ -85,15 +96,21 @@
   width: min(600px, calc(100vw - 32px));
   background: var(--surface);
   border-radius: 17px;
-  box-shadow: var(--shadow-3);
+  box-shadow: var(--shadow-3), 0 40px 120px -30px rgba(2,3,10,.55);
   overflow: hidden;
-  animation: modal-in .2s var(--spring);
+  animation: modal-in .26s cubic-bezier(.3, 1.35, .42, 1);
 }
-.palette-input {
-  display: flex; align-items: center; gap: 11px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--line);
-  color: var(--text-3);
+.palette.closing { animation: modal-out .12s ease forwards; }
+.palette-input { position: relative; display: flex; align-items: center; gap: 11px; padding: 16px 18px; border-bottom: 1px solid var(--line); color: var(--text-3); }
+/* a living gradient hairline under the search field */
+.palette-input::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  background-size: 200% 100%;
+  opacity: .7;
+  animation: grad-pan 3s linear infinite;
 }
 .palette-input input {
   flex: 1; border: 0; outline: none; background: none;
@@ -107,14 +124,25 @@
   width: 100%; text-align: left;
   padding: 8.5px 10px; border-radius: 10px;
   font-size: 13.5px;
-  transition: background .08s;
+  transition: background .08s, box-shadow .12s;
+}
+/* first paint cascade — JS adds .fresh then removes it after a beat */
+.palette-list.fresh .pal-item {
+  animation: pal-item-in .3s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+@keyframes pal-item-in {
+  from { opacity: 0; transform: translateY(7px); }
 }
 .pal-item .pi-sub { margin-left: auto; font-size: 11px; color: var(--text-3); font-family: var(--mono); flex: none; }
 .pal-item .pi-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pal-item .pi-ic { color: var(--text-3); display: inline-flex; flex: none; transition: color .12s, transform .12s var(--spring); }
+.pal-item .pi-ic { color: var(--text-3); display: inline-flex; flex: none; transition: color .12s, transform .18s var(--bounce); }
 .pal-item b { font-weight: 640; color: var(--accent); }
-.pal-item.sel { background: var(--hover); }
-.pal-item.sel .pi-ic { color: var(--accent); transform: translateX(1px) scale(1.08); }
+.pal-item.sel {
+  background: var(--hover);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.pal-item.sel .pi-ic { color: var(--accent); transform: translateX(1px) scale(1.14); }
 .palette-empty { padding: 28px; text-align: center; color: var(--text-3); font-size: 13px; }
 .palette-foot {
   display: flex; gap: 14px; align-items: center;
@@ -131,7 +159,9 @@
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   animation: fade-in .2s ease;
+  transition: opacity .18s ease;
 }
+.drawer-wrap.closing .drawer-scrim { opacity: 0; }
 .drawer {
   position: absolute; top: 0; right: 0; bottom: 0;
   width: min(600px, 94vw);
@@ -139,11 +169,23 @@
   border-left: 1px solid var(--line);
   box-shadow: -30px 0 80px rgba(2,3,10,.4);
   display: flex; flex-direction: column;
-  animation: drawer-in .26s var(--ease-out);
+  animation: drawer-in .34s cubic-bezier(.26, 1.25, .38, 1);
 }
 [data-theme="light"] .drawer { box-shadow: -24px 0 70px rgba(30,28,60,.16); }
 @keyframes drawer-in {
-  from { transform: translateX(48px); opacity: 0; }
+  from { transform: translateX(72px); opacity: 0; }
+}
+.drawer-wrap.closing .drawer {
+  animation: drawer-out .18s ease forwards;
+}
+@keyframes drawer-out {
+  to { transform: translateX(56px); opacity: 0; }
+}
+/* content settles in a beat after the panel lands — opening only,
+   so later re-renders (prop changes) don't replay the entrance */
+.drawer.opening .drawer-body > * {
+  animation: rise .4s var(--glide-in) backwards;
+  animation-delay: calc(.08s + var(--i, 0) * 40ms);
 }
 .drawer-bar {
   display: flex; align-items: center; gap: 8px;
@@ -188,20 +230,42 @@
 }
 .toast {
   pointer-events: auto;
+  position: relative;
   display: flex; align-items: center; gap: 12px;
   background: var(--raise);
   border: 1px solid var(--line-2);
   border-radius: 12px;
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-2), 0 18px 50px -18px rgba(2,3,10,.5);
   padding: 9px 9px 9px 14px;
   font-size: 13px;
   max-width: min(480px, 92vw);
-  animation: toast-in .22s var(--spring);
+  animation: toast-in .3s cubic-bezier(.3, 1.35, .42, 1);
+  overflow: hidden;
 }
-.toast.leaving { opacity: 0; transform: translateY(8px) scale(.97); transition: .18s ease; }
+.toast.leaving { opacity: 0; transform: translateY(10px) scale(.95); transition: .2s var(--ease); }
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(12px) scale(.95); }
+  from { opacity: 0; transform: translateY(16px) scale(.92); }
 }
+/* countdown bar — the visible lifetime of the toast; hover holds it */
+.toast .t-life {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px;
+  transform-origin: left;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--accent-2));
+  animation: t-life linear forwards;
+}
+.toast:hover .t-life { animation-play-state: paused; }
+@keyframes t-life { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* leading icon chip */
+.toast .t-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex: none;
+  border-radius: 8px;
+  background: var(--accent-dim); color: var(--accent);
+  animation: pop-check .4s var(--bounce) backwards .08s;
+}
+.toast.danger .t-ic { background: var(--danger-dim); color: var(--danger); }
+.toast.ok .t-ic { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
 .toast .t-action {
   color: var(--accent); font-weight: 650; font-size: 12.5px;
   padding: 4px 8px; border-radius: 7px;
@@ -220,8 +284,29 @@
   text-align: center;
   padding: 56px 20px;
   color: var(--text-3);
+  position: relative;
 }
-.empty svg { margin-bottom: 10px; }
+.empty svg { margin-bottom: 10px; animation: bob 5.5s ease-in-out infinite; }
+/* two lazy satellites orbit the empty-state icon */
+.empty::before, .empty::after {
+  content: "";
+  position: absolute;
+  top: calc(56px + 26px);
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.empty::before {
+  left: calc(50% - 46px);
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: bob 5.5s ease-in-out infinite .9s;
+}
+.empty::after {
+  left: calc(50% + 40px);
+  width: 4px; height: 4px;
+  background: color-mix(in srgb, var(--accent-2) 55%, transparent);
+  animation: bob 5.5s ease-in-out infinite 1.6s;
+}
 .empty h3 { font-family: var(--serif); font-weight: 500; font-size: 18px; color: var(--text-2); letter-spacing: -.005em; }
 .empty p { font-size: 12.5px; max-width: 320px; line-height: 1.55; }
 .empty .btn { margin-top: 14px; }

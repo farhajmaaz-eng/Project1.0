@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Tessera · views v3 — home, issues, board, cycles, projects, settings
+   Tessera · views v4 — home, issues, board, cycles, projects, settings
 --------------------------------------------------------------------------- */
 
 /* ================= home ================= */
@@ -9,12 +9,16 @@
   font-size: clamp(27px, 3.4vw, 37px);
   letter-spacing: -.014em;
 }
+/* the name shimmers — a light band sweeps through the gradient text */
 .home-greet h1 em {
   font-style: italic; font-weight: 430;
-  background: var(--grad-accent);
+  background: linear-gradient(110deg,
+    var(--accent) 20%, var(--accent-2) 38%, var(--accent) 55%, var(--accent-2) 72%, var(--accent) 85%);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: grad-pan 6s linear infinite;
 }
 .home-greet p { color: var(--text-3); font-size: 12px; margin-top: 7px; }
 
@@ -23,6 +27,7 @@
   margin-bottom: 32px;
 }
 .stat {
+  --mx: 50%; --my: 50%;
   position: relative;
   overflow: hidden;
   background:
@@ -31,7 +36,8 @@
   border: 1px solid var(--line);
   border-radius: var(--r-m);
   padding: 14px 16px 12px;
-  transition: border-color .18s, transform .18s var(--ease), box-shadow .18s;
+  transition: border-color .18s, box-shadow .18s, transform .25s cubic-bezier(.3,1.35,.42,1);
+  will-change: transform;
 }
 .stat::after {
   content: "";
@@ -41,7 +47,19 @@
   opacity: 0;
   transition: opacity .2s;
 }
-.stat:hover { border-color: var(--line-2); transform: translateY(-1.5px); box-shadow: var(--shadow-1); }
+/* cursor spotlight (motion.js feeds --mx/--my) */
+.stat::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(180px circle at var(--mx) var(--my),
+    color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.stat:hover { border-color: var(--line-2); box-shadow: var(--shadow-1), 0 14px 34px -18px rgba(2,3,10,.4); }
+.stat:hover::before { opacity: 1; }
 .stat:hover::after { opacity: 1; }
 .stat b {
   display: block;
@@ -49,7 +67,8 @@
   letter-spacing: -.02em;
   font-feature-settings: "tnum";
 }
-.stat span { font-size: 11.5px; color: var(--text-3); }
+.stat span { font-size: 11.5px; color: var(--text-3); transition: color .15s; }
+.stat:hover span { color: var(--text-2); }
 .stat.warn b { color: var(--warn); }
 .stat.over b { color: var(--danger); }
 .stat.ok b { color: var(--ok); }
@@ -82,15 +101,27 @@
 .mini-row .key-chip { flex: none; }
 
 .rail-card {
+  --mx: 50%; --my: 50%;
   position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-l);
   padding: 17px;
   margin-bottom: 16px;
-  transition: border-color .18s, box-shadow .18s;
+  transition: border-color .18s, box-shadow .18s, transform .25s cubic-bezier(.3,1.3,.42,1);
 }
-.rail-card:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); }
+.rail-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(240px circle at var(--mx) var(--my),
+    color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.rail-card:hover { border-color: var(--line-2); box-shadow: var(--shadow-1); transform: translateY(-2px); }
+.rail-card:hover::before { opacity: 1; }
 .rail-card h3 {
   font-size: 10.5px; font-weight: 680; text-transform: uppercase;
   letter-spacing: .1em; color: var(--text-3); margin-bottom: 12px;
@@ -123,6 +154,7 @@
   background: var(--ok); border-color: var(--ok); color: #0b2318;
   transform: scale(1.05);
 }
+.onboard-step.done .onboard-check svg { animation: pop-check .45s var(--bounce); }
 .onboard-main { flex: 1; min-width: 0; }
 .onboard-main b { display: block; font-size: 13.5px; font-weight: 600; }
 .onboard-main span { font-size: 12px; color: var(--text-3); line-height: 1.45; display: block; margin-top: 1px; }
@@ -135,7 +167,14 @@
   box-shadow: inset 0 1px 2px rgba(2,3,10,.12);
 }
 [data-theme="light"] .cycle-bar { box-shadow: none; }
-.cycle-bar i { display: block; height: 100%; transition: width .4s var(--ease-out); }
+/* segments grow out of the left edge on mount */
+.cycle-bar i {
+  display: block; height: 100%;
+  transform-origin: left;
+  animation: bar-grow .8s var(--glide-in) backwards;
+  transition: width .4s var(--ease-out);
+}
+@keyframes bar-grow { from { transform: scaleX(0); } }
 .cycle-bar i:first-child { border-radius: 99px 0 0 99px; }
 
 .stack-legend { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 10px; }
@@ -149,7 +188,25 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 10px; color: var(--text-2);
 }
+/* draw-in: bits.js sets --c (circumference) & --off (final offset) */
+.pring circle.pring-arc {
+  stroke-dashoffset: var(--off, 0);
+  animation: ring-draw .9s var(--glide-in) backwards;
+}
+@keyframes ring-draw { from { stroke-dashoffset: var(--c, 1); } }
 .spark { overflow: visible; }
+/* line draws itself left to right on mount */
+.spark polyline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: spark-draw 1s var(--ease-out) forwards .15s;
+}
+@keyframes spark-draw { to { stroke-dashoffset: 0; } }
+.spark circle {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: pop-check .35s var(--bounce) backwards 1s;
+}
 
 /* ================= issue list ================= */
 .filters { display: flex; align-items: center; gap: 7px; flex: 1; flex-wrap: wrap; }
@@ -185,6 +242,7 @@
 .group:hover .group-head .icon-btn { opacity: 1; }
 
 .irow {
+  position: relative;
   display: flex; align-items: center; gap: 10px;
   width: calc(100% + 16px); margin: 0 -8px;
   padding: 7.5px 8px;
@@ -194,6 +252,19 @@
   transition: background .1s, border-color .1s, transform .12s var(--ease);
 }
 .irow:hover { background: var(--hover); }
+.irow:hover .ir-title { color: var(--text); }
+/* a soft accent bar slides in on the left edge while hovering */
+.irow::after {
+  content: "";
+  position: absolute; left: 0; top: 50%;
+  width: 2.5px; height: 55%;
+  border-radius: 99px;
+  background: var(--grad-accent);
+  transform: translateY(-50%) scaleY(0);
+  opacity: 0;
+  transition: transform .2s var(--bounce), opacity .15s;
+}
+.irow:hover::after { transform: translateY(-50%) scaleY(1); opacity: .8; }
 .irow:hover:active { transform: scale(.997); }
 .irow.sel { background: var(--active); border-color: var(--line-2); }
 .irow.done-row .ir-title { color: var(--text-3); text-decoration: line-through; text-decoration-color: var(--line-2); }
@@ -225,6 +296,7 @@
 @media (max-width: 900px) {
   .board { grid-auto-columns: 78vw; scroll-snap-align: start; }
 }
+/* columns cascade in from below, one beat apart */
 .bcol {
   background: var(--bg-2);
   border: 1px solid var(--line);
@@ -232,64 +304,121 @@
   padding: 9px;
   min-width: 0;
   scroll-snap-align: start;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background .15s, box-shadow .2s;
+  animation: rise-blur .5s var(--glide-in) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms + 40ms);
 }
 .bcol.drag-over {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
   background: var(--accent-faint);
-  box-shadow: inset 0 0 24px color-mix(in srgb, var(--accent) 7%, transparent);
+  box-shadow: inset 0 0 24px color-mix(in srgb, var(--accent) 7% , transparent),
+              0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 .bcol-head {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 6px 10px;
   font-size: 12.5px; font-weight: 640;
 }
-.bcol-head .count { font-family: var(--mono); font-size: 10.5px; color: var(--text-3); }
-.bcol-head .icon-btn { margin-left: auto; width: 22px; height: 22px; opacity: 0; transition: opacity .15s; }
+.bcol-head .count {
+  font-family: var(--mono); font-size: 10.5px; color: var(--text-3);
+  transition: transform .2s var(--bounce), color .2s;
+}
+.bcol-head:hover .count { color: var(--text-2); }
+.bcol-head .icon-btn { margin-left: auto; width: 22px; height: 22px; opacity: 0; transition: opacity .15s, transform .15s; }
+.bcol-head .icon-btn:hover { transform: rotate(90deg); }
 .bcol:hover .bcol-head .icon-btn { opacity: 1; }
 
 .bcard {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 11px 12px 10px;
   margin-bottom: 7px;
   cursor: grab;
-  transition: transform .15s var(--ease), box-shadow .15s, border-color .15s, opacity .15s;
+  transition: transform .18s cubic-bezier(.3,1.35,.42,1), box-shadow .18s, border-color .18s, opacity .15s;
+  will-change: transform;
 }
 .bcard:hover {
   border-color: var(--line-2);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(2,3,10,.14), 0 0 0 1px var(--line-2);
+  transform: translateY(-3px) scale(1.012);
+  box-shadow: 0 6px 18px rgba(2,3,10,.16), 0 14px 34px -16px rgba(2,3,10,.4), 0 0 0 1px var(--line-2);
+  z-index: 2;
 }
-[data-theme="light"] .bcard:hover { box-shadow: 0 6px 16px rgba(30,28,60,.10), 0 0 0 1px var(--line-2); }
+[data-theme="light"] .bcard:hover { box-shadow: 0 8px 20px rgba(30,28,60,.10), 0 14px 30px -16px rgba(30,28,60,.25), 0 0 0 1px var(--line-2); }
+.bcard::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(120deg,
+    color-mix(in srgb, var(--accent) 7%, transparent), transparent 38%);
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.bcard:hover::before { opacity: 1; }
 .bcard:active { cursor: grabbing; }
-.bcard.dragging { opacity: .35; transform: rotate(-1.5deg) scale(.99); }
+/* the dragged original becomes a hollow ghost */
+.bcard.dragging {
+  opacity: .32;
+  transform: rotate(-2deg) scale(.97);
+  filter: saturate(.6);
+  box-shadow: none;
+}
+.bcard.just-dropped { animation: card-land .4s cubic-bezier(.3,1.5,.42,1); }
+@keyframes card-land {
+  0% { transform: scale(.92); }
+  55% { transform: scale(1.03); }
+  100% { transform: none; }
+}
 .bcard .bc-title { font-size: 13px; line-height: 1.42; margin-top: 6px; }
 .bcard-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.bcard-foot .avatar { transition: transform .18s var(--spring); }
+.bcard:hover .bcard-foot .avatar { transform: scale(1.12) rotate(-4deg); }
 .bcard-foot .spacer { flex: 1; }
 .bc-labels { display: flex; gap: 4px; }
-.bc-labels i { width: 8px; height: 8px; border-radius: 50%; }
+.bc-labels i { width: 8px; height: 8px; border-radius: 50%; transition: transform .18s var(--spring); }
+.bcard:hover .bc-labels i { transform: scale(1.2); }
 
 .drop-line {
-  height: 2px; border-radius: 2px;
+  height: 2.5px; border-radius: 2px;
   background: var(--grad-accent);
   margin: -5px 2px 5px;
-  animation: drop-pulse 1s ease infinite alternate;
+  animation: drop-pulse 1s ease infinite alternate, bar-grow .18s var(--ease-out) backwards;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 65%, transparent);
 }
 @keyframes drop-pulse { from { opacity: .65; } to { opacity: 1; } }
 
 /* ================= entity headers (cycle/project) ================= */
 .entity-head {
+  --mx: 50%; --my: 50%;
   display: flex; align-items: center; gap: 16px;
   padding: 20px 22px;
   margin-bottom: 26px;
   position: relative;
+  overflow: hidden;
   background:
     radial-gradient(110% 130% at 100% 0%, var(--accent-faint), transparent 46%),
     var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-l);
+}
+/* a slow aurora band drifts across the header */
+.entity-head::before {
+  content: "";
+  position: absolute; top: -60%; bottom: -60%; width: 40%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--accent) 7%, transparent), transparent);
+  transform: translateX(-160%) skewX(-14deg);
+  animation: sheen 7s ease-in-out infinite;
+  pointer-events: none;
+}
+.entity-head::after {
+  content: "";
+  position: absolute; inset: 0 0 auto; height: 1.5px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, var(--accent-2)), transparent);
+  background-size: 200% 100%;
+  opacity: .6;
+  animation: grad-pan 8s linear infinite;
 }
 .entity-icon {
   width: 48px; height: 48px; flex: none;
@@ -299,6 +428,11 @@
   box-shadow: var(--shadow-1);
   display: flex; align-items: center; justify-content: center;
   font-size: 24px;
+  transition: transform .3s var(--bounce), box-shadow .25s;
+}
+.entity-head:hover .entity-icon {
+  transform: rotate(-5deg) scale(1.07);
+  box-shadow: var(--shadow-2), 0 0 24px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .entity-main { flex: 1; min-width: 0; }
 .entity-main h1 { font-family: var(--serif); font-weight: 500; font-size: 21px; }
@@ -328,23 +462,46 @@
   gap: 14px;
 }
 .proj-card {
+  --mx: 50%; --my: 50%;
   position: relative;
   text-align: left;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-l);
   padding: 18px;
-  transition: border-color .16s, transform .18s var(--ease), box-shadow .18s;
+  transition: border-color .16s, box-shadow .18s, transform .3s cubic-bezier(.26,1.35,.4,1);
+  will-change: transform;
 }
+/* gradient halo ring fades in on hover, brighter at the cursor */
+.proj-card::before {
+  content: "";
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background:
+    radial-gradient(240px circle at var(--mx) var(--my),
+      color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent-2) 25%, transparent) 60%),
+    linear-gradient(130deg, var(--accent), var(--accent-2));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .22s;
+  pointer-events: none;
+}
+.proj-card:hover::before { opacity: 1; }
 .proj-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--line-2));
-  transform: translateY(-2.5px);
-  box-shadow: var(--shadow-2);
+  border-color: transparent;
+  box-shadow: var(--shadow-2), 0 20px 44px -20px color-mix(in srgb, var(--accent) 30%, transparent);
 }
-.proj-card:active { transform: translateY(-.5px); }
+.proj-card:active { transform: translateY(-.5px) scale(.995); }
+/* the emoji badge does a happy little hop when the card is entered */
+.proj-card .pc-emoji { font-size: 20px; display: inline-block; transition: transform .25s var(--bounce); }
+.proj-card:hover .pc-emoji { transform: scale(1.18) rotate(-7deg); }
 .proj-card .pc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.proj-card .pc-emoji { font-size: 20px; }
-.proj-card h3 { font-size: 14px; font-weight: 640; flex: 1; }
+.proj-card h3 { font-size: 14px; font-weight: 640; flex: 1; transition: color .15s; }
+.proj-card:hover h3 { color: var(--text); }
 .proj-card p {
   color: var(--text-3); font-size: 12px; line-height: 1.55;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -360,9 +517,11 @@
   min-height: 150px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   color: var(--text-3); font-size: 13px; font-weight: 550;
-  transition: border-color .16s, color .16s, background .16s;
+  transition: border-color .16s, color .16s, background .16s, transform .25s var(--bounce);
 }
-.pc-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-faint); }
+.pc-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-faint); transform: scale(1.015); }
+.pc-add svg { transition: transform .3s var(--spring); }
+.pc-add:hover svg { transform: rotate(90deg) scale(1.15); }
 
 /* ================= settings ================= */
 .settings-shell {
@@ -410,6 +569,15 @@
 .seg button.on {
   background: var(--surface); color: var(--text);
   box-shadow: var(--shadow-1); font-weight: 580;
+  animation: seg-pop .22s var(--bounce);
+}
+@keyframes seg-pop { from { transform: scale(.9); } }
+
+/* value flash — a prop button pulses when its value changes (JS adds .flash) */
+.prop-btn.flash { animation: prop-flash .5s var(--ease); }
+@keyframes prop-flash {
+  0% { background: var(--accent-dim); box-shadow: var(--halo); }
+  100% { background: transparent; }
 }
 
 .member-row { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-top: 1px solid var(--line); }

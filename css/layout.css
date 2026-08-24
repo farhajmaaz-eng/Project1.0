@@ -1,11 +1,45 @@
 /* ---------------------------------------------------------------------------
-   Tessera · layout v3 — shell, sidebar, mobile chrome (top bar + tab bar)
+   Tessera · layout v4 — shell, sidebar, mobile chrome, ambient aurora
 --------------------------------------------------------------------------- */
 
 #app {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   height: 100dvh;
+  position: relative;
+}
+
+/* ---- ambient aurora ----
+   Two vast blurred color fields drifting behind the whole app.
+   Pure transform animation; composited; costs nothing while idle. */
+#app::before,
+#app::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: .55;
+}
+#app::before {
+  width: 56vw; height: 56vw;
+  left: -14vw; top: -22vw;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--accent) 13%, transparent), transparent 72%);
+  animation: aurora-a 46s ease-in-out infinite;
+}
+#app::after {
+  width: 48vw; height: 48vw;
+  right: -16vw; bottom: -20vw;
+  background:
+    radial-gradient(closest-side, color-mix(in srgb, var(--accent-2) 10%, transparent), transparent 70%);
+  animation: aurora-b 38s ease-in-out infinite;
+}
+.main-rail, #sidebar { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  #app::before, #app::after { animation: none; }
 }
 
 /* ================= sidebar ================= */
@@ -18,6 +52,23 @@
   min-height: 0;
   user-select: none;
 }
+
+/* nav items drift in from the left, one beat apart (JS sets --i) */
+.sb-item {
+  animation: sb-in .34s var(--glide-in) backwards;
+  animation-delay: calc(var(--i, 0) * 16ms);
+}
+@keyframes sb-in {
+  from { opacity: 0; transform: translateX(-8px); }
+}
+
+/* brand mark — the four tiles playfully scatter toward the cursor */
+.sb-brand:hover .sb-logo { border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.sb-logo .tl { transition: transform .38s var(--spring); transform-origin: center; transform-box: fill-box; }
+.sb-brand:hover .tl-1 { transform: translate(1.6px, -1.4px) rotate(-7deg); }
+.sb-brand:hover .tl-2 { transform: translateY(-2px) rotate(6deg); }
+.sb-brand:hover .tl-3 { transform: translate(-1.4px, 1.8px) rotate(5deg); }
+.sb-brand:hover .tl-4 { transform: scale(1.16); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 55%, transparent)); }
 
 .sb-brand {
   display: flex; align-items: center; gap: 10px;
@@ -85,13 +136,15 @@
   transition: background .12s, color .12s, transform .12s var(--ease);
 }
 .sb-item:hover { background: var(--hover); color: var(--text); }
+.sb-item:active { transform: scale(.985); }
 .sb-item::before {
   content: "";
-  position: absolute; left: -2px; top: 50%;
+  position: absolute; left: 0; top: 50%;
   width: 3px; height: 16px; border-radius: 99px;
   background: var(--grad-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
   transform: translateY(-50%) scaleY(0);
-  transition: transform .18s var(--spring);
+  transition: transform .22s var(--bounce);
 }
 .sb-item.on {
   background: linear-gradient(90deg, var(--accent-faint), transparent 130%);
@@ -99,7 +152,7 @@
   color: var(--text); font-weight: 580;
 }
 .sb-item.on::before { transform: translateY(-50%) scaleY(1); }
-.sb-item.on .si-ic { color: var(--accent); }
+.sb-item.on .si-ic { color: var(--accent); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 45%, transparent)); }
 .sb-item .si-ic { color: var(--text-3); display: inline-flex; flex: none; transition: color .12s; }
 .sb-item:hover .si-ic { color: var(--text-2); }
 .sb-item .si-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -163,6 +216,14 @@
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s, box-shadow .2s, padding .2s;
+  margin-bottom: 1px;
+}
+/* JS toggles .scrolled once the view is actually scrolling */
+.toolbar.scrolled {
+  border-bottom-color: var(--line);
+  box-shadow: 0 10px 24px -18px rgba(2,3,10,.5);
 }
 
 .crumbs {
@@ -212,6 +273,19 @@
 }
 .tab-item:active { transform: scale(.92); }
 .tab-item.on { color: var(--accent); }
+.tab-item.on::before {
+  content: "";
+  position: absolute; top: 5px;
+  width: 30px; height: 30px;
+  border-radius: 12px;
+  background: var(--accent-dim);
+  animation: tab-blob .3s var(--bounce);
+}
+@keyframes tab-blob {
+  from { transform: scale(.4); opacity: 0; }
+}
+.tab-item svg { position: relative; transition: transform .25s var(--bounce); }
+.tab-item.on svg { transform: translateY(-1px) scale(1.06); }
 .tab-item .t-badge {
   position: absolute; top: 7px; left: calc(50% + 6px);
   min-width: 15px; height: 15px; padding: 0 4px;
@@ -219,6 +293,8 @@
   background: var(--grad-accent); color: var(--on-accent);
   font-size: 9px; font-weight: 700; line-height: 15px;
   font-family: var(--mono);
+  z-index: 1;
+  animation: pop-check .35s var(--bounce) backwards .2s;
 }
 
 @media (max-width: 900px) {
@@ -227,11 +303,13 @@
     position: fixed; inset: 0 auto 0 0; z-index: 80;
     width: min(292px, 86vw);
     transform: translateX(-103%);
-    transition: transform .24s var(--ease-out);
+    transition: transform .32s cubic-bezier(.3, 1.25, .4, 1);
     box-shadow: var(--shadow-3);
     background: var(--bg-2);
   }
   .sidebar.open { transform: none; }
+  #app::before { left: -40vw; opacity: .35; }
+  #app::after { right: -50vw; opacity: .3; }
   .mob-top { display: flex; }
   .tabbar { display: grid; }
   .view-inner, .view-inner.wide { padding: calc(60px + env(safe-area-inset-top, 0px)) 16px calc(var(--tabbar-h) + 62px); }
@@ -243,4 +321,13 @@
   background: var(--scrim);
   backdrop-filter: blur(2px);
   animation: fade-in .2s ease;
+}
+
+/* route exit — the old view drifts up while the import resolves */
+.view-inner.leaving {
+  opacity: 0;
+  transform: translateY(-10px) scale(.99);
+  filter: blur(6px);
+  transition: opacity .14s ease, transform .14s ease, filter .14s ease;
+  pointer-events: none;
 }

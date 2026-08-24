@@ -1,8 +1,10 @@
 /* ---------------------------------------------------------------------------
    Tessera · welcome — sign up / sign in (all local, no server)
+   Cinematic edition: drifting aurora fields, floating mosaic, parallax.
 --------------------------------------------------------------------------- */
 
 .welcome {
+  --px: 0; --py: 0;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
@@ -10,7 +12,31 @@
     radial-gradient(900px 480px at 82% -12%, var(--accent-faint), transparent 62%),
     radial-gradient(700px 420px at -10% 110%, var(--accent-faint), transparent 58%),
     var(--bg);
+  position: relative;
+  overflow: hidden;
 }
+/* three vast aurora blobs drift behind everything */
+.welcome::before, .welcome::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  z-index: 0;
+}
+.welcome::before {
+  width: 44vw; height: 44vw;
+  left: -10vw; top: -14vw;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 16%, transparent), transparent 72%);
+  animation: aurora-a 34s ease-in-out infinite;
+}
+.welcome::after {
+  width: 40vw; height: 40vw;
+  right: -12vw; bottom: -16vw;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent-2) 13%, transparent), transparent 70%);
+  animation: aurora-b 28s ease-in-out infinite;
+}
+.welcome > * { position: relative; z-index: 1; }
 @media (max-width: 880px) {
   .welcome { grid-template-columns: 1fr; }
   .wl-pitch { display: none; }
@@ -31,21 +57,33 @@
   font-family: var(--serif); font-weight: 460;
   font-size: clamp(31px, 3.6vw, 45px);
   line-height: 1.13; letter-spacing: -.016em;
+  animation: rise-blur .7s var(--glide-in) backwards .1s;
 }
 .wl-hero h1 em {
   font-style: italic; font-weight: 430;
-  background: var(--grad-accent);
+  background: linear-gradient(110deg,
+    var(--accent) 15%, var(--accent-2) 35%, var(--accent) 52%, var(--accent-2) 70%, var(--accent) 88%);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-.wl-hero > p { color: var(--text-2); font-size: 14.5px; line-height: 1.65; margin-top: 16px; max-width: 40ch; }
+/* the paragraph + points cascade in behind the headline */
+.wl-hero > p {
+  color: var(--text-2); font-size: 14.5px; line-height: 1.65; margin-top: 16px; max-width: 40ch;
+  animation: rise-blur .7s var(--glide-in) backwards .22s;
+}
 
 .wl-points { margin-top: 30px; display: flex; flex-direction: column; gap: 13px; }
-.wl-point { display: flex; gap: 12px; align-items: flex-start; animation: rise .55s var(--ease-out) backwards; }
-.wl-point:nth-child(1) { animation-delay: .15s; }
-.wl-point:nth-child(2) { animation-delay: .25s; }
-.wl-point:nth-child(3) { animation-delay: .35s; }
+.wl-point {
+  display: flex; gap: 12px; align-items: flex-start;
+  animation: rise-blur .6s var(--glide-in) backwards;
+  transition: transform .25s var(--ease);
+}
+.wl-point:hover { transform: translateX(4px); }
+.wl-point:nth-child(1) { animation-delay: .34s; }
+.wl-point:nth-child(2) { animation-delay: .46s; }
+.wl-point:nth-child(3) { animation-delay: .58s; }
 .wl-point .wp-ic {
   width: 28px; height: 28px; flex: none;
   border-radius: 9px;
@@ -55,17 +93,34 @@
   border: 1px solid var(--line);
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--accent);
+  transition: transform .3s var(--bounce), box-shadow .25s;
+}
+.wl-point:hover .wp-ic {
+  transform: rotate(-8deg) scale(1.12);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .wl-point b { display: block; font-size: 13.5px; font-weight: 600; }
 .wl-point span { font-size: 12.5px; color: var(--text-3); line-height: 1.5; }
 
 .wl-foot { color: var(--text-3); font-size: 11px; }
 
-/* tile motif */
+/* tile motif — floats on its own, leans with the pointer via --px/--py */
 .wl-tiles {
   position: absolute; right: -20px; top: -30px;
   opacity: .5; pointer-events: none;
+  transform: translate(calc(var(--px) * 14px), calc(var(--py) * 14px));
+  transition: transform .3s cubic-bezier(.2,.8,.3,1);
 }
+/* the individual mosaic squares breathe apart */
+.wl-tiles rect {
+  animation: float-y 7s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.wl-tiles rect:nth-child(1) { --tilt: -1.4deg; animation-delay: 0s; }
+.wl-tiles rect:nth-child(2) { --tilt: 1.8deg; animation-delay: .9s; }
+.wl-tiles rect:nth-child(3) { --tilt: -2.2deg; animation-delay: 1.7s; }
+.wl-tiles rect:nth-child(4) { --tilt: 2deg; animation-delay: 2.4s; }
 
 /* right form */
 .wl-form-pane {
@@ -73,16 +128,48 @@
   padding: 5vh 24px;
 }
 .wl-card {
+  position: relative;
   width: min(400px, 100%);
-  animation: rise .5s var(--ease-out) backwards .08s;
+  padding: 30px 28px;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-3), inset 0 1px 0 rgba(255,255,255,.06);
+  animation: rise-blur .65s var(--glide-in) backwards .15s;
 }
+/* animated conic border — a light chases the card's edge */
+.wl-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 23px;
+  padding: 1px;
+  background: conic-gradient(from var(--ang, 0deg),
+    transparent 0deg, color-mix(in srgb, var(--accent) 70%, transparent) 40deg,
+    color-mix(in srgb, var(--accent-2) 60%, transparent) 80deg, transparent 140deg,
+    transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: spin-border 6s linear infinite;
+}
+@property --ang {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes spin-border { to { --ang: 360deg; } }
 .wl-card h2 {
   font-family: var(--serif); font-weight: 500; font-size: 23px; letter-spacing: -.012em;
 }
 .wl-card .wl-sub { color: var(--text-3); font-size: 13px; margin-top: 5px; }
 
 .wl-fields { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
-.wl-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+.wl-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 6px; transition: color .15s; }
+.wl-field:focus-within label { color: var(--accent); }
 .wl-field .input { height: 38px; border-radius: 10px; background: var(--well); }
 .wl-field .input:focus { background: var(--surface); }
 
@@ -104,7 +191,17 @@
 .wl-submit {
   width: 100%; margin-top: 22px; height: 41px;
   border-radius: 11px; font-size: 14px;
+  transition: transform .15s var(--spring), filter .15s, background .3s;
 }
+.wl-submit:hover { transform: translateY(-1px); }
+.wl-submit:active { transform: scale(.98); }
+/* success morph — the button flashes green and pops before handing off */
+.wl-submit.wl-success {
+  background: var(--ok);
+  color: #06180f;
+  pointer-events: none;
+}
+.wl-submit.wl-success svg { animation: pop-check .4s var(--bounce); }
 .wl-switch { text-align: center; margin-top: 18px; font-size: 12.5px; color: var(--text-3); }
 .wl-switch button { color: var(--accent); font-weight: 600; }
 .wl-switch button:hover { text-decoration: underline; }

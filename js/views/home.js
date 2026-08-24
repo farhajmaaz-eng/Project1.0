@@ -10,6 +10,10 @@ import {
 import { issueRowHTML, wireIssueRows, emptyState } from './../bits.js';
 import { openIssue } from './../issue-drawer.js';
 import { nav } from './../nav.js';
+import { celebrate } from './../motion.js';
+
+/* fires once per session, the first time Home loads fully set up */
+let onboardCelebrated = false;
 
 export function renderHome(view) {
   const s = S();
@@ -160,6 +164,12 @@ export function renderHome(view) {
   view.querySelector('[data-goto-docs]')?.addEventListener('click', () => nav('#/docs'));
   view.querySelector('[data-goto-cycle]')?.addEventListener('click', () => nav(`#/cycle/${cycStats.cyc.id}`));
   view.querySelectorAll('[data-doc]').forEach(b => b.onclick = () => nav(`#/doc/${b.dataset.doc}`));
+
+  /* graduation — the checklist quietly completed; say it with confetti */
+  if (!remaining.length && s.issues.length && !onboardCelebrated) {
+    onboardCelebrated = true;
+    setTimeout(celebrate, 500);
+  }
 }
 
 function stepHref(id) {

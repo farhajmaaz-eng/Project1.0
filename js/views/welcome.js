@@ -2,11 +2,12 @@
    Tessera · views/welcome — local signup / sign in. The only gate there is.
 --------------------------------------------------------------------------- */
 
-import { esc } from './../util.js';
+import { esc, sleep } from './../util.js';
 import { ico } from './../icons.js';
 import { signUp, signIn, startSession } from './../auth.js';
 import { initStateFor } from './../store.js';
 import { nav } from './../nav.js';
+import { celebrate, reduceMotion } from './../motion.js';
 
 const LOGO = `
 <svg class="wl-logo" viewBox="0 0 32 32" aria-hidden="true">
@@ -165,6 +166,15 @@ export function renderWelcome(view, mode = 'signup') {
         await signIn(email, pass);
       }
       startSession();
+
+      /* the send-off: button flashes green, cannons fire, then we sail home */
+      if (!reduceMotion()) {
+        btn.classList.add('wl-success');
+        btn.innerHTML = `${ico('check', 16)} ${isSignup ? 'Workspace ready' : 'Welcome back'}`;
+        celebrate();
+        await sleep(650);
+      }
+
       document.body.classList.remove('auth-mode');
       nav('#/home');
       window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -176,4 +186,19 @@ export function renderWelcome(view, mode = 'signup') {
   });
 
   setTimeout(() => view.querySelector('input')?.focus(), 60);
+
+  /* pointer parallax — the whole scene leans gently with the cursor */
+  if (!reduceMotion() && matchMedia('(pointer:fine)').matches) {
+    const pane = view.querySelector('.welcome');
+    let raf = 0;
+    pane.addEventListener('pointermove', (e) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const r = pane.getBoundingClientRect();
+        pane.style.setProperty('--px', (((e.clientX - r.left) / r.width) - 0.5).toFixed(3));
+        pane.style.setProperty('--py', (((e.clientY - r.top) / r.height) - 0.5).toFixed(3));
+      });
+    });
+  }
 }

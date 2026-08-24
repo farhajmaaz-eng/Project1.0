@@ -80,7 +80,7 @@ export function emptyState(iconName, title, body, actionHTML = '') {
     </div>`;
 }
 
-/** SVG progress ring — used by cycles, projects and home */
+/** SVG progress ring — draws itself in on mount (see views.css .pring-arc) */
 export function progressRing(pct, { size = 44, stroke = 4, color = 'var(--accent)', label } = {}) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -90,17 +90,18 @@ export function progressRing(pct, { size = 44, stroke = 4, color = 'var(--accent
       <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
         <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
           stroke="var(--line-2)" stroke-width="${stroke}"/>
-        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
+        <circle class="pring-arc" cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none"
           stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
           stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
-          transform="rotate(-90 ${size / 2} ${size / 2})"
-          style="transition:stroke-dashoffset .6s var(--ease-out)"/>
+          style="--c:${c.toFixed(1)};--off:${off.toFixed(1)};
+                 transition:stroke-dashoffset .6s var(--ease-out)"
+          transform="rotate(-90 ${size / 2} ${size / 2})"/>
       </svg>
       <b class="pring-num mono">${label ?? `${Math.round(pct)}%`}</b>
     </span>`;
 }
 
-/** tiny inline sparkline (polyline) for cycle burn-up */
+/** tiny inline sparkline that sketches itself left to right on mount */
 export function sparkline(values, { w = 150, h = 34, color = 'var(--accent)' } = {}) {
   const max = Math.max(1, ...values);
   const step = values.length > 1 ? w / (values.length - 1) : w;
@@ -109,7 +110,7 @@ export function sparkline(values, { w = 150, h = 34, color = 'var(--accent)' } =
   return `
     <svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
       <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8"
-        stroke-linecap="round" stroke-linejoin="round"/>
+        stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>
       <circle cx="${w}" cy="${(h - (values[values.length - 1] / max) * (h - 4) - 2).toFixed(1)}"
         r="2.6" fill="${color}"/>
     </svg>`;

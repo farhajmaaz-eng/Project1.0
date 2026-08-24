@@ -151,7 +151,7 @@ export function openPalette(initialQuery = '') {
             ? `<span class="pi-ic" style="font-size:14px;width:16px;text-align:center">${it.emoji}</span>`
             : `<span class="pi-ic">${ico(it.icon || 'doc', 15)}</span>`;
           html += `
-            <button class="pal-item ${idx === sel ? 'sel' : ''}" data-idx="${idx}">
+            <button class="pal-item ${idx === sel ? 'sel' : ''}" data-idx="${idx}" style="--i:${Math.min(idx, 12)}">
               ${iconHTML}
               <span class="pi-label">${markHtml(it.label, it.marks)}</span>
               ${it.kbd ? `<kbd>${esc(it.kbd)}</kbd>` : it.sub ? `<span class="pi-sub">${esc(it.sub)}</span>` : ''}
@@ -161,6 +161,12 @@ export function openPalette(initialQuery = '') {
       }
       listEl.innerHTML = html || '<div class="palette-empty">Nothing matches.</div>';
     }
+
+    /* the opening paint cascades in; keystrokes swap instantly */
+    listEl.classList.add('fresh');
+    const settle = () => listEl.classList.remove('fresh');
+    setTimeout(settle, 600);
+    input.addEventListener('input', settle, { once: true });
 
     listEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.pal-item');

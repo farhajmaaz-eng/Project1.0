@@ -16,6 +16,7 @@ import { avatarHTML, labelChip } from './bits.js';
 import { mountEditor } from './editor.js';
 import { chatStream } from './openrouter.js';
 import { sanitizeAIText } from './views/ai.js';
+import { confetti, miniBurst, reduceMotion } from './motion.js';
 
 let current = null; // active drawer handle
 let currentId = null;
@@ -38,7 +39,7 @@ export function openIssue(id) {
   wrap.className = 'drawer-wrap';
   wrap.innerHTML = `
     <div class="drawer-scrim"></div>
-    <aside class="drawer" role="dialog" aria-label="Issue">
+    <aside class="drawer opening" role="dialog" aria-label="Issue">
       <div class="drawer-bar">
         <span class="key-chip" data-ref></span>
         <button class="icon-btn" style="width:24px;height:24px" data-copylink title="Copy link">${ico('key', 13)}</button>
@@ -51,14 +52,24 @@ export function openIssue(id) {
     </aside>`;
   document.getElementById('overlays').appendChild(wrap);
 
+  /* entrance choreography runs once; the .opening class is dropped
+     shortly after so later re-renders don't replay it */
+  const drawerEl = wrap.querySelector('.drawer');
+  setTimeout(() => drawerEl.classList.remove('opening'), 700);
+
   let editor = null;
 
+  let closed = false;
   const close = () => {
+    if (closed) return;
+    closed = true;
     editor?.flush();
-    wrap.remove();
     document.removeEventListener('keydown', keyHandler, true);
     current = null;
     currentId = null;
+    if (reduceMotion()) { wrap.remove(); return; }
+    wrap.classList.add('closing');
+    setTimeout(() => wrap.remove(), 210);
   };
   current = { close };
 
@@ -135,6 +146,11 @@ export function openIssue(id) {
 
     body.querySelector('[data-openparent]')?.addEventListener('click', (e) =>
       openIssue(e.currentTarget.dataset.openparent));
+
+    /* stagger the entrance — only while the drawer is still opening */
+    if (wrap.querySelector('.drawer').classList.contains('opening')) {
+      [...body.children].forEach((el, i) => el.style.setProperty('--i', Math.min(i, 6)));
+    }
 
     renderProps();
     renderSubtasks();
@@ -242,6 +258,7 @@ export function openIssue(id) {
         const nowDone = !['done', 'canceled'].includes(kid.status);
         updateIssue(kid.id, { status: nowDone ? 'done' : 'todo' },
           nowDone ? 'completed a subtask' : 'reopened a subtask');
+        if (nowDone) miniBurst(el);
       });
     // open kid on click
     host.querySelectorAll('.subrow').forEach(row =>
@@ -439,8 +456,17 @@ export function openIssue(id) {
         })),
         onSelect: (v) => {
           if (v !== iss.status) {
+            const becameDone = v === 'done';
             updateIssue(iss.id, { status: v }, `changed status to ${statusOf(v).name}`);
-            flashSaved(); renderAll();
+            flashProp(btn);
+            if (becameDone && !reduceMotion()) {
+              confetti(btn, {
+                count: 90,
+                power: 9,
+                colors: ['#41cf94', '#8f80f3', '#c08afc', '#ecb44d'],
+              });
+            }
+            renderAll();
           }
         },
       });
@@ -455,7 +481,7 @@ export function openIssue(id) {
         onSelect: (v) => {
           if (v !== iss.priority) {
             updateIssue(iss.id, { priority: v }, `changed priority to ${v === 'none' ? 'none' : cap(v)}`);
-            flashSaved();
+            flashProp(btn);
           }
         },
       });
@@ -471,7 +497,7 @@ export function openIssue(id) {
         onSelect: (v) => {
           if (v !== iss.assignee) {
             updateIssue(iss.id, { assignee: v }, v ? `assigned to ${name(v)}` : 'unassigned the issue');
-            flashSaved();
+            flashProp(btn);
           }
         },
       });
@@ -622,6 +648,16 @@ export function openIssue(id) {
     saveDot.classList.add('show');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => saveDot.classList.remove('show'), 1400);
+  }
+
+  /** pulse a property button so the change registers viscerally */
+  function flashProp(btn) {
+    flashSaved();
+    requestAnimationFrame(() => {
+      btn.classList.remove('flash');
+      void btn.offsetWidth;
+      btn.classList.add('flash');
+    });
   }
 
   renderAll();

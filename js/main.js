@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Tessera · main v2 — boot, auth gating, router, theme, shortcuts, motion
+   Tessera · main v4 — boot, auth gating, router, theme, shortcuts, motion
 --------------------------------------------------------------------------- */
 
 import { S, onChange, takePersistError, setSetting } from './store.js';
@@ -8,12 +8,14 @@ import { renderTabbar } from './tabbar.js';
 import { openPalette } from './palette.js';
 import { openModal, closeTopMenu, anyMenuOpen, anyModalOpen, toast } from './ui.js';
 import { isDrawerOpen } from './issue-drawer.js';
-import { esc } from './util.js';
+import { esc, sleep } from './util.js';
 import { ico } from './icons.js';
 import { nav } from './nav.js';
+import { wireRipples, watchSurfaces, reduceMotion } from './motion.js';
 import * as auth from './auth.js';
 
 const viewEl = document.getElementById('view');
+const reduce = reduceMotion();
 
 /* ---------- theme ---------- */
 
@@ -30,10 +32,38 @@ export function applyThemeFromSettings() {
   if (btn) btn.innerHTML = ico(pref === 'light' ? 'moon' : 'sun', 15);
 }
 
-export function cycleTheme() {
+/**
+ * Theme switch with a cinematic circular wipe from the toggle button
+ * (View Transitions API when available; instant crossfade otherwise).
+ */
+export function cycleTheme(originEl) {
   const cur = document.documentElement.dataset.theme;
   if (S()) setSetting('theme', cur === 'light' ? 'dark' : 'light');
-  applyThemeFromSettings();
+  themeWipe(originEl, applyThemeFromSettings);
+}
+
+/** run `fn` inside a circular reveal expanding from originEl */
+export function themeWipe(originEl, fn) {
+  if (reduce || !document.startViewTransition || !originEl) { fn(); return; }
+
+  const r = originEl.getBoundingClientRect();
+  const x = r.left + r.width / 2, y = r.top + r.height / 2;
+  const radius = Math.hypot(
+    Math.max(x, innerWidth - x),
+    Math.max(y, innerHeight - y),
+  );
+
+  const transition = document.startViewTransition(fn);
+  transition.ready.then(() => {
+    document.documentElement.animate(
+      { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+      {
+        duration: 480,
+        easing: 'cubic-bezier(.3,.9,.3,1)',
+        pseudoElement: '::view-transition-new(root)',
+      },
+    );
+  }).catch(() => {});
 }
 
 /* ---------- routes ---------- */
@@ -90,12 +120,16 @@ async function route() {
     enterAuthMode();
     if (hash0 !== '#/welcome') { location.hash = '#/welcome'; return; }
     await import('./views/welcome.js').then(m => m.renderWelcome(viewEl, 'signup'));
+    dismissBoot();
+    playReveal();
     return;
   }
   if (!auth.hasSession()) {
     enterAuthMode();
     if (hash0 !== '#/login') { location.hash = '#/login'; return; }
     await import('./views/welcome.js').then(m => m.renderWelcome(viewEl, 'login'));
+    dismissBoot();
+    playReveal();
     return;
   }
   exitAuthMode();
@@ -117,6 +151,15 @@ async function route() {
     ]).then(([, d]) => d.openIssue(hash.split('/')[2]))
   : null;
 
+  /* the old view drifts up + blurs out while the next one loads */
+  const inner = viewEl.querySelector('.view-inner');
+  if (inner && !reduce && !skipExitOnce) {
+    inner.classList.add('leaving');
+    await sleep(110);
+  }
+  skipExitOnce = false;
+  viewEl.scrollTop = 0;
+
   renderSidebar();
   renderTabbar();
   applyThemeFromSettings();
@@ -136,7 +179,11 @@ async function route() {
 
   playReveal();
   viewEl.scrollTop = 0;
+  dismissBoot();
 }
+
+/* first navigation skips the exit flourish — there's nothing to leave yet */
+let skipExitOnce = true;
 
 function enterAuthMode() {
   document.body.classList.add('auth-mode');
@@ -163,10 +210,40 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
 function playReveal() {
   const inner = viewEl.querySelector('.view-inner');
   if (!inner) return;
-  inner.classList.remove('reveal');
+  inner.classList.remove('reveal', 'leaving');
+  [...inner.children].forEach((el, i) => el.style.setProperty('--i', Math.min(i, 6)));
   void inner.offsetWidth;
   inner.classList.add('reveal');
 }
+
+/* ---------- boot splash ---------- */
+/* the CSS plays assemble → hold → fade on its own clock; we only
+   guarantee the node goes away (and never before the show ends) */
+function dismissBoot() {
+  const b = document.getElementById('boot');
+  if (!b || b.dataset.done) return;
+  b.dataset.done = '1';
+  setTimeout(() => b.remove(), 1600);
+}
+setTimeout(dismissBoot, 4000);
+
+/* ---------- global motion wiring ---------- */
+wireRipples();
+watchSurfaces();
+
+/* sticky toolbars gain a shadow once their view scrolls */
+let scrollTick = false;
+document.addEventListener('scroll', () => {
+  if (scrollTick) return;
+  scrollTick = true;
+  requestAnimationFrame(() => {
+    scrollTick = false;
+    document.querySelectorAll('.view').forEach((v) => {
+      const tb = v.querySelector?.('.toolbar');
+      if (tb) tb.classList.toggle('scrolled', v.scrollTop > 8);
+    });
+  });
+}, { capture: true, passive: true });
 
 window.addEventListener('hashchange', route);
 

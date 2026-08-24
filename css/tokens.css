@@ -97,16 +97,43 @@
 
   --sidebar-w: 264px;
 
-  --ease:     cubic-bezier(.25, .7, .3, 1);
-  --ease-out: cubic-bezier(.22, .9, .3, 1);
-  --spring:   cubic-bezier(.32, 1.35, .45, 1);
+  --ease:      cubic-bezier(.25, .7, .3, 1);
+  --ease-out:  cubic-bezier(.22, .9, .3, 1);
+  --spring:    cubic-bezier(.32, 1.35, .45, 1);
+  --bounce:    cubic-bezier(.68, -.55, .27, 1.55);
+  --swoosh:    cubic-bezier(.83, 0, .17, 1);
+  --glide-in:  cubic-bezier(0, .55, .15, 1);
+
+  /* motion tempo */
+  --t-fast:   120ms;
+  --t-med:    220ms;
+  --t-slow:   420ms;
+  --t-glacial: 900ms;
 
   /* focus halo — resolves against whichever theme is active */
   --halo: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
+  --halo-strong: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent),
+                 0 0 24px color-mix(in srgb, var(--accent) 18%, transparent);
 
   --tabbar-h: 58px;
 
   --font-ui: 400 14px/1.55 var(--sans);
+}
+
+/* the aurora lives behind everything and never touches layout */
+@keyframes aurora-a {
+  0%   { transform: translate(-6%, -4%) rotate(0deg) scale(1); }
+  50%  { transform: translate(7%, 6%) rotate(9deg) scale(1.12); }
+  100% { transform: translate(-6%, -4%) rotate(0deg) scale(1); }
+}
+@keyframes aurora-b {
+  0%   { transform: translate(5%, 8%) rotate(0deg) scale(1.05); }
+  50%  { transform: translate(-8%, -5%) rotate(-11deg) scale(.94); }
+  100% { transform: translate(5%, 8%) rotate(0deg) scale(1.05); }
+}
+@keyframes hue-drift {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(26deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

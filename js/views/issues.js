@@ -14,6 +14,7 @@ import { issueRowHTML, wireIssueRows, emptyState, labelChip, avatarHTML } from '
 import { openIssue } from './../issue-drawer.js';
 import { openNewIssue } from './../new-issue.js';
 import { nav } from './../nav.js';
+import { flip } from './../motion.js';
 
 const cap = (w) => w[0].toUpperCase() + w.slice(1);
 
@@ -100,7 +101,7 @@ export function renderIssues(view, route) {
         items: ['status', 'priority', 'assignee'].map(g => ({
           value: g, label: cap(g), checked: g === st.groupBy,
         })),
-        onSelect: v => { st.groupBy = v; paintChips(); renderList(); },
+        onSelect: v => { st.groupBy = v; paintChips(); flip(listHost, '[data-issue]', renderList); },
       });
     }
   };
@@ -123,13 +124,15 @@ export function renderIssues(view, route) {
       })),
       onSelect: (v) => {
         sel.has(v) ? sel.delete(v) : sel.add(v);
-        paintChips(); renderList();
+        paintChips();
+        flip(listHost, '[data-issue]', renderList);
       },
     });
   }
 
   const qEl = view.querySelector('[data-q]');
-  qEl.addEventListener('input', () => { st.q = qEl.value; renderList(); });
+  /* typing filters re-flow the list with FLIP — rows glide to their new homes */
+  qEl.addEventListener('input', () => { st.q = qEl.value; flip(listHost, '[data-issue]', renderList); });
 
   const boardBtn = view.querySelector('[data-gob_board]');
   boardBtn?.addEventListener('click', () => nav('#/board'));

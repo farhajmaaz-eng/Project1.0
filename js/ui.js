@@ -1,22 +1,34 @@
 /* ---------------------------------------------------------------------------
-   Tessera · ui — toasts, dropdown menus, modal shell, confirm dialog
+   Tessera · ui v4 — toasts, dropdown menus, modal shell, confirm dialog
 --------------------------------------------------------------------------- */
 
 import { ico } from './icons.js';
 import { esc } from './util.js';
+import { reduceMotion } from './motion.js';
 
 const overlayHost = () => document.getElementById('overlays');
 
 /* ================= toast ================= */
 
+/**
+ * toast('Saved', { icon:'check', tone:'ok', action:{label,fn}, timeout })
+ * A countdown hairline shows exactly how long the toast lives; hovering
+ * holds it open. The animation itself is the clock — no drift.
+ */
 export function toast(msg, opts = {}) {
   const host = document.getElementById('toasts');
   const t = document.createElement('div');
-  t.className = 'toast';
+  const tone = opts.tone || 'ok';
+  if (opts.icon !== null) t.className = `toast ${tone}`;
+  else t.className = 'toast';
+
+  const iconName = opts.icon ?? (tone === 'danger' ? 'alert' : 'check');
   t.innerHTML = `
+    ${iconName ? `<span class="t-ic">${ico(iconName, 13)}</span>` : ''}
     ${msg ? `<span>${msg}</span>` : ''}
     ${opts.action ? `<button class="t-action">${esc(opts.action.label)}</button>` : ''}
-    <button class="icon-btn t-x" aria-label="Dismiss">${ico('x', 13)}</button>`;
+    <button class="icon-btn t-x" aria-label="Dismiss">${ico('x', 13)}</button>
+    <i class="t-life"></i>`;
   host.appendChild(t);
 
   let gone = false;
@@ -24,15 +36,28 @@ export function toast(msg, opts = {}) {
     if (gone) return;
     gone = true;
     t.classList.add('leaving');
-    setTimeout(() => t.remove(), 200);
+    setTimeout(() => t.remove(), 240);
   };
 
   if (opts.action) {
     t.querySelector('.t-action').onclick = () => { opts.action.fn(); kill(); };
   }
   t.querySelector('.t-x').onclick = kill;
+
   const ttl = opts.timeout ?? (opts.action ? 6000 : 3200);
-  setTimeout(kill, ttl);
+  const life = t.querySelector('.t-life');
+
+  if (!reduceMotion()) {
+    // the bar is the timer: its animationend retires the toast
+    life.style.animationDuration = `${ttl}ms`;
+    life.addEventListener('animationend', kill, { once: true });
+    // safety: if animations are throttled in a hidden tab, fall back
+    const fallback = setTimeout(kill, ttl + 1500);
+    t.addEventListener('pointerenter', () => clearTimeout(fallback), { once: true });
+  } else {
+    life.remove();
+    setTimeout(kill, ttl);
+  }
 }
 
 /* ================= dropdown menu ================= */
@@ -72,6 +97,7 @@ export function openMenu({ anchor, x, y, items, onSelect, minWidth }) {
     const b = document.createElement('button');
     b.className = 'menu-item' + (it.danger ? ' danger' : '') + (it.checked ? ' checked' : '');
     b.dataset.idx = i;
+    b.style.setProperty('--i', i);
     b.innerHTML = `
       ${it.icon ? `<span class="mi-ic">${it.icon}</span>` : ''}
       <span class="mi-label">${esc(it.label)}</span>
@@ -168,11 +194,22 @@ export function openModal(buildContent, { width } = {}) {
   overlayHost().appendChild(wrap);
 
   const close = () => {
-    wrap.remove();
-    openModals = openModals.filter(m => m !== close);
-    onClose?.();
+    if (closing) return;
+    closing = true;
     document.removeEventListener('keydown', keyHandler, true);
+    const finish = () => {
+      wrap.remove();
+      openModals = openModals.filter(m => m !== close);
+      onClose?.();
+    };
+    if (reduceMotion()) finish();
+    else {
+      wrap.classList.add('closing');
+      modal.classList.add('closing');
+      setTimeout(finish, 170);
+    }
   };
+  let closing = false;
   let onClose = null;
 
   wrap.addEventListener('pointerdown', (e) => { if (e.target === wrap) close(); });

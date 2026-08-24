@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Tessera · base v3 — reset, primitives, motion
+   Tessera · base v4 — reset, primitives, motion
 --------------------------------------------------------------------------- */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -44,20 +44,61 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
 *:hover::-webkit-scrollbar-thumb { background: var(--line-2); background-clip: padding-box; }
 *::-webkit-scrollbar-track { background: transparent; }
 
-/* ---- entrance choreography ---- */
+/* ---- entrance choreography ----
+   Children of .reveal rise, unblur and settle in a staggered cascade.
+   JS tags elements with --i; nth-child is the no-JS fallback. */
 @keyframes rise {
   from { opacity: 0; transform: translateY(10px); }
+}
+@keyframes rise-blur {
+  from { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
 }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes pop-in {
   from { opacity: 0; transform: scale(.92); }
 }
-.reveal > * { animation: rise .5s var(--ease-out) backwards; }
-.reveal > *:nth-child(1) { animation-delay: .02s; }
-.reveal > *:nth-child(2) { animation-delay: .07s; }
-.reveal > *:nth-child(3) { animation-delay: .12s; }
-.reveal > *:nth-child(4) { animation-delay: .17s; }
-.reveal > *:nth-child(n+5) { animation-delay: .21s; }
+
+.reveal > * { animation: rise-blur .55s var(--glide-in) backwards; animation-delay: calc(var(--i, 0) * 45ms + 20ms); }
+.reveal > *:nth-child(1) { --i: 0; }
+.reveal > *:nth-child(2) { --i: 1; }
+.reveal > *:nth-child(3) { --i: 2; }
+.reveal > *:nth-child(4) { --i: 3; }
+.reveal > *:nth-child(n+5) { --i: 4; }
+
+/* ---- shared keyframe library ---- */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50%      { transform: translateY(-9px) rotate(var(--tilt, 0deg)); }
+}
+@keyframes sheen {
+  from { transform: translateX(-130%) skewX(-18deg); }
+  to   { transform: translateX(230%) skewX(-18deg); }
+}
+@keyframes grad-pan {
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
+}
+@keyframes pop-check {
+  0%   { transform: scale(.4); opacity: 0; }
+  60%  { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+  50%      { box-shadow: 0 0 22px 4px color-mix(in srgb, var(--accent) 26%, transparent); }
+}
+@keyframes wiggle {
+  0%, 100% { rotate: 0deg; } 25% { rotate: -7deg; } 75% { rotate: 7deg; }
+}
+@keyframes ripple-out {
+  from { opacity: .35; transform: scale(0); }
+  to   { opacity: 0; transform: scale(1); }
+}
 
 /* ---- type utilities ---- */
 .mono { font-family: var(--mono); font-size: 12px; letter-spacing: .01em; font-feature-settings: "tnum"; }
@@ -91,6 +132,7 @@ kbd {
   font-weight: 550; font-size: 13px;
   white-space: nowrap;
   user-select: none;
+  overflow: hidden;
   transition: transform .09s var(--ease), background .14s var(--ease),
               border-color .14s var(--ease), box-shadow .18s var(--ease), color .14s var(--ease);
 }
@@ -99,11 +141,23 @@ kbd {
   background: var(--grad-accent);
   color: var(--on-accent); font-weight: 630;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 1px 3px rgba(2,3,10,.25);
+  overflow: hidden;
 }
+/* the shine — a light bar sweeps across primary buttons on hover */
+.btn.primary::after {
+  content: "";
+  position: absolute; top: -40%; bottom: -40%; left: 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  pointer-events: none;
+}
+.btn.primary:hover::after { animation: sheen .7s var(--ease); }
 .btn.primary:hover {
   filter: brightness(1.07);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.24),
-              0 3px 14px color-mix(in srgb, var(--accent) 40%, transparent);
+              0 3px 14px color-mix(in srgb, var(--accent) 40%, transparent),
+              0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .btn.ghost { border-color: var(--line-2); color: var(--text); background: transparent; }
 .btn.ghost:hover { background: var(--hover); border-color: var(--line-2); }
@@ -123,8 +177,20 @@ kbd {
   transition: background .12s var(--ease), color .12s var(--ease), transform .12s var(--spring);
 }
 .icon-btn:hover { background: var(--hover); color: var(--text); }
+.icon-btn:hover svg { transform: scale(1.08); }
+.icon-btn svg { transition: transform .18s var(--spring); }
 .icon-btn:active { transform: scale(.9); }
 .icon-btn.on { color: var(--accent); background: var(--accent-dim); }
+
+/* ---- ripples (span injected by js/motion.js) ---- */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, currentColor 0%, transparent 62%);
+  opacity: .35;
+  animation: ripple-out .55s var(--ease-out) forwards;
+}
 
 /* ---- inputs ---- */
 .input, select.input, textarea.input {
@@ -268,6 +334,15 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
 }
 @keyframes rot { to { rotate: 360deg; } }
 
+/* ---- theme switch wipe (View Transitions API) ----
+   main.js drives a circular clip-path from the toggle button; we just
+   neutralize the default crossfade so the wipe is the only show. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 /* ---------------------------------------------------------------------------
    overflow hardening — nothing bleeds, ever
 --------------------------------------------------------------------------- */
@@ -278,3 +353,24 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
 }
 .chip { max-width: 220px; }
 .toast > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+
+/* ripple containment for surfaces that don't already clip */
+.fchip, .tab-item, .sb-item, .menu-item, .pal-item, .mini-row, .sug-chip {
+  position: relative;
+  overflow: hidden;
+}
+
+/* spotlight paint — elements with --mx/--my set by motion.js glow there.
+   Opt-in via [data-spot]; component styles below reuse the same vars. */
+[data-spot] { position: relative; }
+[data-spot]::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 9%, transparent), transparent 65%);
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+[data-spot]:hover::before { opacity: 1; }

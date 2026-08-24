@@ -310,7 +310,7 @@ function wireSection(sec, body, view) {
       const b = e.target.closest('[data-v]');
       if (!b) return;
       setSetting('theme', b.dataset.v);
-      import('./../main.js').then(m => m.applyThemeFromSettings());
+      import('./../main.js').then(m => m.themeWipe(b, () => m.applyThemeFromSettings()));
       body.querySelectorAll('[data-theme-seg] button').forEach(x =>
         x.classList.toggle('on', x.dataset.v === b.dataset.v));
     });

@@ -1,5 +1,6 @@
 /* ---------------------------------------------------------------------------
-   Tessera · views/board — kanban with drag & drop across statuses
+   Tessera · views/board v4 — kanban with honest drag & drop, FLIP reorders,
+   cascading columns and a confetti cannon for anything landing in Done.
 --------------------------------------------------------------------------- */
 
 import { esc } from './../util.js';
@@ -8,6 +9,7 @@ import { S, status as statusOf, issueRef, updateIssue } from './../store.js';
 import { avatarHTML, dueBadge } from './../bits.js';
 import { openIssue } from './../issue-drawer.js';
 import { openNewIssue } from './../new-issue.js';
+import { confetti, flip, reduceMotion } from './../motion.js';
 
 export function renderBoard(view) {
   const s = S();
@@ -28,27 +30,42 @@ export function renderBoard(view) {
 
   let dragId = null;
 
-  for (const st of s.statuses) {
-    if (st.id === 'canceled') continue; // canceled work stays visible in lists, not on the board
-    const colIssues = visible.filter(i => i.status === st.id).sort((a, b) => a.order - b.order);
-    const col = document.createElement('section');
-    col.className = 'bcol';
-    col.dataset.status = st.id;
-    col.innerHTML = `
-      <header class="bcol-head">
-        ${statusIcon(st.id, st.color, 14)}
-        <span>${esc(st.name)}</span>
-        <span class="count">${colIssues.length}</span>
-        <span style="flex:1"></span>
-        <button class="icon-btn" title="Add issue" data-add>${ico('plus', 13)}</button>
-      </header>
-      <div class="bcards" data-cards>
-        ${colIssues.map(cardHTML).join('')}
-      </div>`;
+  /* ---- paint the columns (initial + every refresh) ---- */
+  function paint() {
+    const st = S();
+    boardEl.innerHTML = '';
+    let colIdx = 0;
+    for (const cst of st.statuses) {
+      if (cst.id === 'canceled') continue;
+      const colIssues = st.issues
+        .filter(i => i.status === cst.id)
+        .sort((a, b) => a.order - b.order);
 
+      const col = document.createElement('section');
+      col.className = 'bcol';
+      col.dataset.status = cst.id;
+      col.style.setProperty('--i', colIdx++);
+      col.innerHTML = `
+        <header class="bcol-head">
+          ${statusIcon(cst.id, cst.color, 14)}
+          <span>${esc(cst.name)}</span>
+          <span class="count" data-count>${colIssues.length}</span>
+          <span style="flex:1"></span>
+          <button class="icon-btn" title="Add issue" data-add>${ico('plus', 13)}</button>
+        </header>
+        <div class="bcards" data-cards>
+          ${colIssues.map(cardHTML).join('')}
+        </div>`;
+
+      wireColumn(col);
+      boardEl.appendChild(col);
+    }
+  }
+
+  function wireColumn(col) {
     col.addEventListener('click', (e) => {
       const add = e.target.closest('[data-add]');
-      if (add) { openNewIssue({ status: st.id }); return; }
+      if (add) { openNewIssue({ status: col.dataset.status }); return; }
       const card = e.target.closest('[data-card]');
       if (card) openIssue(card.dataset.card);
     });
@@ -67,14 +84,13 @@ export function renderBoard(view) {
       const lineY = takeDropIndex(col, e.clientY);
       clearLine(col);
       if (!dragId) return;
+      const point = { x: e.clientX, y: e.clientY };
       const ids = [...col.querySelectorAll('[data-card]')].map(el => el.dataset.card)
         .filter(id => id !== dragId);
       const beforeId = lineY === null ? null : ids[lineY] ?? null;
-      reorder(dragId, st.id, beforeId);
+      reorder(dragId, col.dataset.status, beforeId, point);
       dragId = null;
     });
-
-    boardEl.appendChild(col);
   }
 
   boardEl.addEventListener('dragstart', (e) => {
@@ -135,25 +151,49 @@ export function renderBoard(view) {
     lineIdx = null;
   }
 
-  function reorder(issueId, newStatus, beforeId) {
+  /* ---- reorder + immediate FLIP repaint + celebration ---- */
+  function reorder(issueId, newStatus, beforeId, point) {
     const iss = S().issues.find(i => i.id === issueId);
     if (!iss) return;
     const changedStatus = iss.status !== newStatus;
-    // compute new order float
-    let order;
-    if (beforeId == null) {
-      const maxOrder = Math.max(-1, ...S().issues.filter(i => i.status === newStatus && i.id !== issueId).map(i => i.order));
-      order = maxOrder + 10;
-    } else {
-      const target = S().issues.find(i => i.id === beforeId);
-      if (!target) return;
-      const prev = S().issues.filter(i => i.status === newStatus && i.id !== issueId)
-        .sort((a, b) => a.order - b.order);
-      const ti = prev.findIndex(i => i.id === beforeId);
-      const lo = ti > 0 ? prev[ti - 1].order : target.order - 20;
-      order = (lo + target.order) / 2;
+
+    flip(boardEl, '[data-card]', () => {
+      // compute new order float against live state
+      let order;
+      if (beforeId == null) {
+        const maxOrder = Math.max(-1, ...S().issues.filter(i => i.status === newStatus && i.id !== issueId).map(i => i.order));
+        order = maxOrder + 10;
+      } else {
+        const target = S().issues.find(i => i.id === beforeId);
+        if (!target) return;
+        const prev = S().issues.filter(i => i.status === newStatus && i.id !== issueId)
+          .sort((a, b) => a.order - b.order);
+        const ti = prev.findIndex(i => i.id === beforeId);
+        const lo = ti > 0 ? prev[ti - 1].order : target.order - 20;
+        order = (lo + target.order) / 2;
+      }
+      updateIssue(issueId, { order, ...(changedStatus ? { status: newStatus } : {}) },
+        changedStatus ? `changed status to ${statusOf(newStatus).name}` : undefined);
+      paint(); // repaint inside flip()'s measurement window
+    });
+
+    // settle the freshly-moved card
+    requestAnimationFrame(() => {
+      const moved = boardEl.querySelector(`[data-card="${issueId}"]`);
+      moved?.classList.add('just-dropped');
+      moved?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    });
+
+    // landed in Done → fireworks
+    if (changedStatus && newStatus === 'done' && point && !reduceMotion()) {
+      confetti(point.x, {
+        y: Math.min(point.y, innerHeight - 60),
+        count: 110,
+        power: 10,
+        colors: ['#41cf94', '#8f80f3', '#c08afc', '#ecb44d', '#7cc6ff'],
+      });
     }
-    updateIssue(issueId, { order, ...(changedStatus ? { status: newStatus } : {}) },
-      changedStatus ? `changed status to ${statusOf(newStatus).name}` : undefined);
   }
+
+  paint();
 }
