@@ -8,6 +8,11 @@
 export const reduceMotion = () =>
   matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* touch devices have no hover — pointer-follow effects there only fight
+   scrolling and leave stray transforms behind */
+export const noHover = () =>
+  matchMedia('(hover: none)').matches;
+
 const raf = requestAnimationFrame;
 
 /* ===========================================================================
@@ -24,8 +29,9 @@ function ensureCanvas() {
   if (fxCanvas?.isConnected) return;
   fxCanvas = document.createElement('canvas');
   fxCanvas.className = 'fx-canvas';
+  /* 100% of the fixed inset — never vw/vh, which overflow iOS viewports */
   Object.assign(fxCanvas.style, {
-    position: 'fixed', inset: '0', width: '100vw', height: '100vh',
+    position: 'fixed', inset: '0', width: '100%', height: '100%',
     pointerEvents: 'none', zIndex: '999',
   });
   document.body.appendChild(fxCanvas);
@@ -62,8 +68,12 @@ export function confetti(target, opts = {}) {
     x = r.left + r.width / 2; y = r.top + r.height / 2;
   } else { x = innerWidth / 2; y = innerHeight * 0.38; }
 
+  /* small screens get proportionally less confetti — same show, sane load */
+  const areaScale = innerWidth < 700 ? 0.55 : 1;
+  const n = Math.round(count * areaScale);
+
   ensureCanvas();
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < n; i++) {
     const angle = startAngle + (Math.random() - 0.5) * spread;
     const velocity = power * (0.45 + Math.random() * 0.75);
     fxParticles.push({
@@ -173,7 +183,7 @@ export function wireRipples(root = document) {
    ======================================================================== */
 
 export function attachTilt(el, { max = 4.5, scale = 1.012, lift = 3 } = {}) {
-  if (reduceMotion() || el.__tilt) return;
+  if (reduceMotion() || noHover() || el.__tilt) return;
   el.__tilt = true;
   let frame = 0;
 
@@ -219,7 +229,7 @@ export function attachSpotlight(el, pad = 0) {
    ======================================================================== */
 
 export function magnetize(el, strength = 5) {
-  if (reduceMotion() || el.__magnet) return;
+  if (reduceMotion() || noHover() || el.__magnet) return;
   el.__magnet = true;
   let frame = 0;
   el.addEventListener('pointermove', (e) => {
@@ -298,7 +308,7 @@ const SPOT_SEL = '.stat, .rail-card, .entity-head, .onboard';
 
 let scanQueued = false;
 export function watchSurfaces(root = document.body) {
-  if (reduceMotion()) return;
+  if (reduceMotion() || noHover()) return;
   const scan = () => {
     scanQueued = false;
     root.querySelectorAll(TILT_SEL).forEach((el) => attachTilt(el));

@@ -14,6 +14,12 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* kill the 300ms double-tap-zoom delay on all controls */
+button, a, .irow, .bcard, .tab-item, [data-issue], [role="button"] {
+  touch-action: manipulation;
 }
 
 h1, h2, h3, h4, p { margin: 0; }
@@ -65,6 +71,12 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
 .reveal > *:nth-child(3) { --i: 2; }
 .reveal > *:nth-child(4) { --i: 3; }
 .reveal > *:nth-child(n+5) { --i: 4; }
+
+/* mobile entrance: no blur filter — animating filter smears iOS frames
+   and momentarily breaks position:sticky inside the entering content */
+@media (max-width: 900px) {
+  .reveal > * { animation-name: rise; animation-duration: .38s; }
+}
 
 /* ---- shared keyframe library ---- */
 @keyframes bob {
@@ -359,6 +371,22 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
 .fchip, .tab-item, .sb-item, .menu-item, .pal-item, .mini-row, .sug-chip {
   position: relative;
   overflow: hidden;
+}
+
+/* ---- touch usability ----
+   iOS zooms any focused input under 16px — that viewport punch is the
+   classic "everything jumped" bug. Pin inputs to 16px on phones. */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+/* coarse pointers get honest tap targets */
+@media (pointer: coarse) {
+  .icon-btn { width: 34px; height: 34px; }
+  .btn { height: 36px; }
+  .btn.sm { height: 31px; }
+  .fchip { height: 32px; }
 }
 
 /* spotlight paint — elements with --mx/--my set by motion.js glow there.

@@ -37,7 +37,6 @@
   border-radius: var(--r-m);
   padding: 14px 16px 12px;
   transition: border-color .18s, box-shadow .18s, transform .25s cubic-bezier(.3,1.35,.42,1);
-  will-change: transform;
 }
 .stat::after {
   content: "";
@@ -337,7 +336,6 @@
   margin-bottom: 7px;
   cursor: grab;
   transition: transform .18s cubic-bezier(.3,1.35,.42,1), box-shadow .18s, border-color .18s, opacity .15s;
-  will-change: transform;
 }
 .bcard:hover {
   border-color: var(--line-2);
@@ -470,7 +468,6 @@
   border-radius: var(--r-l);
   padding: 18px;
   transition: border-color .16s, box-shadow .18s, transform .3s cubic-bezier(.26,1.35,.4,1);
-  will-change: transform;
 }
 /* gradient halo ring fades in on hover, brighter at the cursor */
 .proj-card::before {
@@ -616,8 +613,7 @@
 }
 
 /* ================= subtasks (issue drawer) ================= */
-.subsec { margin-top: 28px; }
-.subsec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.subsec { margin-top: 28px; }.subsec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .subsec-head .caps { flex: 1; }
 .sub-progress {
   width: 70px; height: 4px; border-radius: 99px;
@@ -659,4 +655,44 @@
   background: var(--raise); color: var(--text-2);
   border: 1px solid var(--line); border-radius: 7px;
   font-size: 11px; padding: 2px 4px; flex: none;
+}
+
+/* ---------------------------------------------------------------------------
+   touch & small-screen usability v3.2
+--------------------------------------------------------------------------- */
+
+/* hover-gated controls are unreachable on touch — show them always */
+@media (pointer: coarse) {
+  .irow { padding-top: 10px; padding-bottom: 10px; }
+  .subrow { padding-top: 8px; padding-bottom: 8px; }
+  .mini-row { padding-top: 9px; padding-bottom: 9px; }
+}
+
+@media (hover: none) {
+  .entity-more,
+  .bcol-head .icon-btn,
+  .group-head .icon-btn,
+  .sb-head .icon-btn,
+  .cover-change { opacity: 1; }
+}
+
+/* phones: no filter-animated entrances anywhere */
+@media (max-width: 900px) {
+  .bcol { animation-name: rise; }
+}
+
+/* phones: let wide headers breathe */
+@media (max-width: 640px) {
+  .entity-head { flex-wrap: wrap; }
+  .entity-side {
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .onboard-step { flex-wrap: wrap; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
 }

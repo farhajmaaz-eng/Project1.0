@@ -8,6 +8,8 @@
   z-index: 90;
   min-width: 184px;
   max-width: 300px;
+  max-height: min(72vh, 480px);
+  overflow-y: auto;
   background: var(--raise);
   border: 1px solid var(--line-2);
   border-radius: 13px;
@@ -81,6 +83,12 @@
 .modal.closing { animation: modal-out .14s ease forwards; }
 @keyframes modal-in {
   from { opacity: 0; transform: translateY(22px) scale(.93); filter: blur(4px); }
+}
+@keyframes modal-in-soft {
+  from { opacity: 0; transform: translateY(20px) scale(.94); }
+}
+@media (max-width: 900px) {
+  .modal, .palette { animation-name: modal-in-soft; }
 }
 @keyframes modal-out {
   to { opacity: 0; transform: translateY(10px) scale(.97); }

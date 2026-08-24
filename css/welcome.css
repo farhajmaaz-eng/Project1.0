@@ -5,6 +5,7 @@
 
 .welcome {
   --px: 0; --py: 0;
+  min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
@@ -40,6 +41,13 @@
 @media (max-width: 880px) {
   .welcome { grid-template-columns: 1fr; }
   .wl-pitch { display: none; }
+  /* animated blur fields wreck iOS compositing — paint the warmth on */
+  .welcome::before, .welcome::after { display: none; }
+  .wl-form-pane {
+    background:
+      radial-gradient(120vw 50vh at 85% -5%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+      radial-gradient(100vw 40vh at -10% 105%, color-mix(in srgb, var(--accent-2) 8%, transparent), transparent 55%);
+  }
 }
 
 /* left pitch */
@@ -216,3 +224,8 @@
   padding: 10px 13px;
 }
 .wl-btn-loading { pointer-events: none; opacity: .75; }
+
+/* phones: no blur-filtered entrances */
+@media (max-width: 880px) {
+  .wl-hero h1, .wl-hero > p, .wl-point, .wl-card { animation-name: rise; }
+}
