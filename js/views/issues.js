@@ -204,7 +204,13 @@ export function renderIssues(view, route) {
 
   wireIssueRows(listHost, (id) => openIssue(id));
 
-  /* keyboard: j/k to move, enter to open — only when not typing */
+  /* keyboard: j/k to move, enter to open — only when not typing.
+     AbortController so re-renders never stack duplicate handlers
+     (the view element itself is persistent across routes). */
+  view.__issueKeys?.abort();
+  const ac = new AbortController();
+  view.__issueKeys = ac;
+
   view.tabIndex = -1;
   view.addEventListener('keydown', (e) => {
     if (e.target.closest('input, textarea, [contenteditable]')) return;
@@ -220,7 +226,7 @@ export function renderIssues(view, route) {
       const row = listHost.querySelectorAll('.irow')[selIdx];
       if (row) openIssue(row.dataset.issue);
     }
-  });
+  }, { signal: ac.signal });
   const clampSel = (n, hi) => Math.max(0, Math.min(hi, n));
 
   paintChips();

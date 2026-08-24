@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tessera — issues &amp; docs, one weave</title>
   <meta name="description" content="A local-first workspace that blends an issue tracker with a docs tool. Plan in tiles, write in flow." />
-  <meta name="theme-color" content="#0a0b11" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#18232B" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ECE5D8" media="(prefers-color-scheme: light)" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
@@ -45,11 +45,11 @@
     #boot {
       position: fixed; inset: 0; z-index: 400;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-      background: var(--bg, #0a0b11);
+      background: var(--bg, #18232B);
       animation: boot-away .5s ease .95s forwards;
       pointer-events: none;
     }
-    [data-theme="light"] #boot { background: #f7f7fb; }
+    [data-theme="light"] #boot { background: #ECE5D8; }
     .boot-mark { display: grid; grid-template-columns: 22px 22px; gap: 5px; }
     .boot-mark i {
       width: 22px; height: 22px;
@@ -61,9 +61,9 @@
     .boot-mark i:nth-child(2) { animation-delay: .15s; }
     .boot-mark i:nth-child(3) { animation-delay: .25s; }
     .boot-mark i.accent {
-      background: linear-gradient(118deg, #8f80f3, #c08afc);
+      background: linear-gradient(118deg, #B85C43, #D3864F);
       border-radius: 11px;
-      box-shadow: 0 0 24px rgba(143,128,243,.5);
+      box-shadow: 0 0 24px rgba(184,92,67,.5);
       animation-delay: .38s;
     }
     @keyframes boot-tile {

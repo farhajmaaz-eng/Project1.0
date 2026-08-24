@@ -190,7 +190,7 @@ export function renderBoard(view) {
         y: Math.min(point.y, innerHeight - 60),
         count: 110,
         power: 10,
-        colors: ['#41cf94', '#8f80f3', '#c08afc', '#ecb44d', '#7cc6ff'],
+        colors: ['#6FA06B', '#B85C43', '#D3864F', '#D9A648', '#D8D0C2'],
       });
     }
   }

@@ -11,10 +11,10 @@ import { celebrate, reduceMotion } from './../motion.js';
 
 const LOGO = `
 <svg class="wl-logo" viewBox="0 0 32 32" aria-hidden="true">
-  <rect x="3" y="3" width="12" height="12" rx="3.5" fill="#88859e" opacity=".55"/>
-  <rect x="17" y="3" width="12" height="12" rx="3.5" fill="#88859e" opacity=".75"/>
-  <rect x="3" y="17" width="12" height="12" rx="3.5" fill="#88859e" opacity=".35"/>
-  <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #8f80f3)"/>
+  <rect x="3" y="3" width="12" height="12" rx="3.5" fill="#8A8578" opacity=".55"/>
+  <rect x="17" y="3" width="12" height="12" rx="3.5" fill="#8A8578" opacity=".75"/>
+  <rect x="3" y="17" width="12" height="12" rx="3.5" fill="#8A8578" opacity=".35"/>
+  <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #B85C43)"/>
 </svg>`;
 
 const POINTS = [
@@ -36,7 +36,7 @@ export function renderWelcome(view, mode = 'signup') {
             <rect x="3" y="3" width="12" height="12" rx="3.5" fill="currentColor"/>
             <rect x="17" y="3" width="12" height="12" rx="3.5" fill="currentColor"/>
             <rect x="3" y="17" width="12" height="12" rx="3.5" fill="currentColor"/>
-            <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #8f80f3)"/>
+            <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #B85C43)"/>
           </svg>
         </div>
         <div class="wl-brand">${LOGO}<b>tessera</b></div>
@@ -180,8 +180,7 @@ export function renderWelcome(view, mode = 'signup') {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     } catch (ex) {
       showErr(ex.message);
-    } finally {
-      setLoading(false);
+      setLoading(false); // success path keeps its morphed state — no reset flash
     }
   });
 

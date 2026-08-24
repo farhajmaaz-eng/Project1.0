@@ -251,7 +251,7 @@ function renderChat(shell) {
     if (role === 'user') {
       wrap.innerHTML = `
         <div class="msg-body"><div class="bubble">${esc(content)}</div></div>
-        <span class="msg-avatar avatar" style="background:${S().members.find(m => m.you)?.color || '#8f80f3'}">${initials()}</span>`;
+        <span class="msg-avatar avatar" style="background:${S().members.find(m => m.you)?.color || '#B85C43'}">${initials()}</span>`;
     } else {
       const isLast = !streamingNow
         && S().ai.thread.length

@@ -17,7 +17,7 @@ import { emptyState } from './../bits.js';
 const EMOJI = ['📄','🌱','🗺️','📝','🧭','🎨','✅','🎯','💡','🔥','📌','🧪','🚀','🛠️','📚','🗓️','🔁','⭐','🧩','🔭','💬','⚖️','🏗️','🧵','🪄','🍀'];
 
 const COVERS = [
-  'linear-gradient(135deg,#8f80f3 0%,#46349c 100%)',
+  'linear-gradient(135deg,#B85C43 0%,#5C3327 100%)',
   'linear-gradient(135deg,#8f8aa5 0%,#33323e 100%)',
   'linear-gradient(135deg,#58b98c 0%,#1e4d38 100%)',
   'linear-gradient(135deg,#9d7cd8 0%,#453168 100%)',

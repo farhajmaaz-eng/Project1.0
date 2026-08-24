@@ -280,7 +280,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  if (!authed() || typingTarget(e) || anyModalOpen() || isDrawerOpen()
+  if (!authed() || typingTarget(e) || anyModalOpen() || anyMenuOpen() || isDrawerOpen()
       || e.metaKey || e.ctrlKey || e.altKey) return;
 
   if (gChord) {

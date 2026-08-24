@@ -1,88 +1,122 @@
 /* ---------------------------------------------------------------------------
-   Tessera · design tokens v3 — "Iris"
-   Cool porcelain & indigo night, one violet thread through everything.
+   Tessera · design tokens v4 — "Hacienda"
+   Deep navy canvas, warm stone cards, one terracotta thread through it all.
 --------------------------------------------------------------------------- */
 
 [data-theme="dark"] {
-  --bg:        #0a0b11;
-  --bg-2:      #0e1018;
-  --surface:   #12141d;
-  --raise:     #191c28;
-  --well:      #0d0f17;
-  --hover:     rgba(227, 229, 246, 0.05);
-  --active:    rgba(227, 229, 246, 0.09);
+  --bg:        #18232B;
+  --bg-2:      #131C23;
+  --surface:   #D8D0C2;   /* warm stone — every card wears it */
+  --raise:     #E4DDCE;
+  --well:      #C9C0AC;
 
-  --line:      rgba(227, 229, 246, 0.075);
-  --line-2:    rgba(227, 229, 246, 0.15);
+  --hover:     rgba(216, 208, 194, 0.06);
+  --active:    rgba(216, 208, 194, 0.11);
 
-  --text:      #ecedf6;
-  --text-2:    #9ba1b7;
-  --text-3:    #656b81;
+  --line:      rgba(216, 208, 194, 0.10);
+  --line-2:    rgba(216, 208, 194, 0.22);
 
-  --accent:       #8f80f3;
-  --accent-hover: #a497ff;
-  --accent-2:     #c08afc;
-  --accent-dim:   rgba(143, 128, 243, 0.16);
-  --accent-faint: rgba(143, 128, 243, 0.065);
-  --on-accent:    #150f31;
+  --text:      #EDE7DB;
+  --text-2:    #A6AA9F;
+  --text-3:    #70756D;
+
+  --accent:       #B85C43;
+  --accent-hover: #CB6C50;
+  --accent-text:  #CE7859;
+  --accent-2:     #D3864F;
+  --accent-dim:   rgba(184, 92, 67, 0.20);
+  --accent-faint: rgba(184, 92, 67, 0.09);
+  --on-accent:    #FDF4E3;
 
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
 
-  --danger:    #f25f6b;
-  --danger-dim:rgba(242, 95, 107, 0.13);
-  --ok:        #41cf94;
-  --warn:      #ecb44d;
+  --danger:    #E06C55;
+  --danger-dim:rgba(224, 108, 85, 0.14);
+  --ok:        #7FAE83;
+  --warn:      #D9A648;
 
-  --scrim:     rgba(4, 5, 12, 0.64);
+  --scrim:     rgba(5, 9, 13, 0.64);
 
-  --shadow-1:  0 1px 2px rgba(2,3,10,.5), 0 0 0 1px var(--line);
-  --shadow-2:  0 2px 6px rgba(2,3,10,.45), 0 18px 44px rgba(2,3,10,.42), 0 0 0 1px var(--line);
-  --shadow-3:  0 6px 18px rgba(2,3,10,.5), 0 32px 90px rgba(2,3,10,.55), 0 0 0 1px var(--line-2);
+  --shadow-1:  0 1px 2px rgba(3,6,10,.5), 0 0 0 1px var(--line);
+  --shadow-2:  0 2px 6px rgba(3,6,10,.45), 0 18px 44px rgba(3,6,10,.42), 0 0 0 1px var(--line);
+  --shadow-3:  0 6px 18px rgba(3,6,10,.5), 0 32px 90px rgba(3,6,10,.55), 0 0 0 1px var(--line-2);
 
-  --code-bg:   #151827;
+  --code-bg:   #101A21;
 
   color-scheme: dark;
+
+  /* surface exchange — values that --text/--line/… resolve to INSIDE
+     stone-surfaced containers (see the .stone-context rule in base.css) */
+  --sx-ink:     #21282E;
+  --sx-ink-2:   #5B5D51;
+  --sx-ink-3:   #837F71;
+  --sx-line:    rgba(24, 35, 43, 0.16);
+  --sx-line-2:  rgba(24, 35, 43, 0.32);
+  --sx-hover:   rgba(24, 35, 43, 0.06);
+  --sx-active:  rgba(24, 35, 43, 0.11);
+  --sx-well:    #CCC2AD;
+  --sx-code:    #CFC5B0;
+  --sx-accent:  #A34E37;
+  --sx-warn:    #8F6A15;
+  --sx-danger:  #AE3D2C;
+  --sx-ok:      #47714E;
 }
 
 [data-theme="light"] {
-  --bg:        #f7f7fb;
-  --bg-2:      #efeff5;
-  --surface:   #ffffff;
-  --raise:     #fbfbfe;
-  --well:      #f1f1f7;
-  --hover:     rgba(30, 29, 51, 0.05);
-  --active:    rgba(30, 29, 51, 0.085);
+  --bg:        #ECE5D8;
+  --bg-2:      #E3DBCB;
+  --surface:   #F8F4EA;
+  --raise:     #FDFAF2;
+  --well:      #E2DAC7;
 
-  --line:      rgba(30, 29, 51, 0.08);
-  --line-2:    rgba(30, 29, 51, 0.16);
+  --hover:     rgba(24, 35, 43, 0.05);
+  --active:    rgba(24, 35, 43, 0.09);
 
-  --text:      #22232e;
-  --text-2:    #61657a;
-  --text-3:    #8f93a6;
+  --line:      rgba(24, 35, 43, 0.10);
+  --line-2:    rgba(24, 35, 43, 0.22);
 
-  --accent:       #5b4bd6;
-  --accent-hover: #4c3cc6;
-  --accent-2:     #9a4ce0;
-  --accent-dim:   rgba(91, 75, 214, 0.11);
-  --accent-faint: rgba(91, 75, 214, 0.055);
-  --on-accent:    #ffffff;
+  --text:      #18232B;
+  --text-2:    #4C555E;
+  --text-3:    #7F847C;
+
+  --accent:       #B85C43;
+  --accent-hover: #A34E37;
+  --accent-text:  #A34E37;
+  --accent-2:     #D3864F;
+  --accent-dim:   rgba(184, 92, 67, 0.14);
+  --accent-faint: rgba(184, 92, 67, 0.07);
+  --on-accent:    #FDF4E3;
 
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
 
-  --danger:    #d23b4d;
-  --danger-dim:rgba(210, 59, 77, 0.09);
-  --ok:        #17996d;
-  --warn:      #a97a13;
+  --danger:    #C24536;
+  --danger-dim:rgba(194, 69, 54, 0.10);
+  --ok:        #47714E;
+  --warn:      #8F6A15;
 
-  --scrim:     rgba(35, 35, 56, 0.38);
+  --scrim:     rgba(28, 30, 32, 0.38);
 
   --shadow-1:  0 1px 2px rgba(30,28,60,.06), 0 0 0 1px var(--line);
   --shadow-2:  0 2px 6px rgba(30,28,60,.05), 0 16px 40px rgba(30,28,60,.10), 0 0 0 1px var(--line);
   --shadow-3:  0 8px 20px rgba(30,28,60,.07), 0 32px 80px rgba(30,28,60,.16), 0 0 0 1px var(--line-2);
 
-  --code-bg:   #eef0f7;
+  --code-bg:   #EEE7D6;
 
   color-scheme: light;
+
+  --sx-ink:     #1B262E;
+  --sx-ink-2:   #57534A;
+  --sx-ink-3:   #87826F;
+  --sx-line:    rgba(24, 35, 43, 0.12);
+  --sx-line-2:  rgba(24, 35, 43, 0.26);
+  --sx-hover:   rgba(24, 35, 43, 0.05);
+  --sx-active:  rgba(24, 35, 43, 0.09);
+  --sx-well:    #EBE3CF;
+  --sx-code:    #EDE5D1;
+  --sx-accent:  #B85C43;
+  --sx-warn:    #8F6A15;
+  --sx-danger:  #B23A2B;
+  --sx-ok:      #47714E;
 }
 
 :root {

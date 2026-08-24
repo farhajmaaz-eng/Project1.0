@@ -7,7 +7,7 @@ import { ico, statusIcon, priIcon } from './icons.js';
 import { member, label as labelOf, status as statusOf, issueRef } from './store.js';
 
 export function avatarHTML(m, lg = false) {
-  if (!m) return `<span class="avatar ${lg ? 'lg' : ''}" style="background:var(--raise);color:var(--text-3);border:1px dashed var(--line-2)">?</span>`;
+  if (!m) return `<span class="avatar ${lg ? 'lg' : ''}" style="background:color-mix(in srgb, var(--text) 8%, transparent);color:var(--text-3);border:1px dashed var(--line-2)">?</span>`;
   return `<span class="avatar ${lg ? 'lg' : ''}" style="background:${m.color}" title="${esc(m.name)}">${esc(initials(m.name))}</span>`;
 }
 

@@ -113,9 +113,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
 
 kbd {
   font: 500 11px/1 var(--mono);
-  color: var(--text-2);
-  background: var(--raise);
-  border: 1px solid var(--line);
+  color: inherit;
+  opacity: .85;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
   border-bottom-width: 2px;
   border-radius: 6px;
   padding: 3px 5px 2px;
@@ -161,7 +162,7 @@ kbd {
 }
 .btn.ghost { border-color: var(--line-2); color: var(--text); background: transparent; }
 .btn.ghost:hover { background: var(--hover); border-color: var(--line-2); }
-.btn.soft { background: var(--accent-dim); color: var(--accent); font-weight: 620; }
+.btn.soft { background: var(--accent-dim); color: var(--accent-text); font-weight: 620; }
 .btn.soft:hover { background: color-mix(in srgb, var(--accent) 24%, transparent); }
 .btn.subtle { color: var(--text-2); }
 .btn.subtle:hover { background: var(--hover); color: var(--text); }
@@ -273,7 +274,7 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
   height: 21px; padding: 0 8px;
   border-radius: 999px;
   font-size: 11px; font-weight: 550;
-  background: var(--raise);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
   border: 1px solid var(--line);
   color: var(--text-2);
   white-space: nowrap;
@@ -285,7 +286,7 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
 .count-pill {
   font-family: var(--mono); font-size: 11px;
   color: var(--text-3);
-  background: var(--raise);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 1px 7px;
@@ -374,3 +375,32 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
   pointer-events: none;
 }
 [data-spot]:hover::before { opacity: 1; }
+
+/* ---------------------------------------------------------------------------
+   stone context — the Hacienda inversion
+   Cards wear warm stone while the shell stays deep navy, so every container
+   painted with --surface/--raise re-points the semantic tokens at its own
+   ink/line/hover set (values live per-theme as --sx-* in tokens.css).
+   Anything nested inside these picks the swap up automatically — chips,
+   kbd, badges, inputs — because they're all var-driven.
+--------------------------------------------------------------------------- */
+.card, .stat, .rail-card, .proj-card:not(.pc-add), .bcard, .entity-head,
+.modal, .palette, .menu, .toast, .ai-composer, .wl-card, .onboard,
+.slash, .composer-box, .tbl-tools, .bubble, .sug-chip, .seg,
+.input, select.input, textarea.input, .search-box {
+  --text: var(--sx-ink);
+  --text-2: var(--sx-ink-2);
+  --text-3: var(--sx-ink-3);
+  --line: var(--sx-line);
+  --line-2: var(--sx-line-2);
+  --hover: var(--sx-hover);
+  --active: var(--sx-active);
+  --well: var(--sx-well);
+  --code-bg: var(--sx-code);
+  --accent: var(--sx-accent);
+  --accent-text: var(--sx-accent);
+  --warn: var(--sx-warn);
+  --danger: var(--sx-danger);
+  --ok: var(--sx-ok);
+  color: var(--text);
+}
