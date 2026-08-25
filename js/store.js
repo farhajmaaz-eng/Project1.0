@@ -29,7 +29,7 @@ export function initStateFor({ name, email, workspace, prefix }) {
       openrouterKey: '',
     },
     seq: 1,
-    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#B85C43', you: true }],
+    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#C17338', you: true }],
     labels: [
       { id: 'bug', name: 'Bug', color: '#B34A3E' },
       { id: 'feature', name: 'Feature', color: '#5F8A5E' },
@@ -142,8 +142,11 @@ export function filterIssues(opts = {}) {
 
 export function groupIssues(list, key) {
   const groups = new Map();
+  /* unknown status ids (imports, older schemas) fold into the first
+     status instead of spawning phantom groups that vanish from the board */
+  const knownStatus = (id) => (state.statuses.some(s => s.id === id) ? id : state.statuses[0].id);
   for (const iss of list) {
-    const g = key === 'status' ? iss.status
+    const g = key === 'status' ? knownStatus(iss.status)
       : key === 'priority' ? iss.priority
       : key === 'assignee' ? (iss.assignee || 'none')
       : 'all';

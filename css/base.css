@@ -405,8 +405,8 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
 [data-spot]:hover::before { opacity: 1; }
 
 /* ---------------------------------------------------------------------------
-   stone context — the Hacienda inversion
-   Cards wear warm stone while the shell stays deep navy, so every container
+   stone context — the Highland inversion
+   Cards wear warm bone while the shell stays deep pine, so every container
    painted with --surface/--raise re-points the semantic tokens at its own
    ink/line/hover set (values live per-theme as --sx-* in tokens.css).
    Anything nested inside these picks the swap up automatically — chips,

@@ -208,7 +208,7 @@
 }
 
 /* ================= issue list ================= */
-.filters { display: flex; align-items: center; gap: 7px; flex: 1; flex-wrap: wrap; }
+.filters { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
 
 .fchip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -287,8 +287,8 @@
 .board {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 268px;
-  gap: 14px;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: 12px;
   align-items: start;
   min-height: 300px;
 }

@@ -49,6 +49,11 @@ const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 
 const asDate = (iso) => {
   if (!iso) return null;
+  /* tolerate epoch numbers / Date objects from imports or older schemas —
+     a malformed date must never take down a whole view */
+  if (iso instanceof Date) return isNaN(iso) ? null : iso;
+  if (typeof iso === 'number') return new Date(iso);
+  if (typeof iso !== 'string') return null;
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
 };

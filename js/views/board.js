@@ -34,11 +34,14 @@ export function renderBoard(view) {
   function paint() {
     const st = S();
     boardEl.innerHTML = '';
+    /* fold unknown status ids (imports, older schemas) into the first column */
+    const firstStatus = st.statuses[0].id;
+    const colOf = (id) => st.statuses.some(s => s.id === id) ? id : firstStatus;
     let colIdx = 0;
     for (const cst of st.statuses) {
       if (cst.id === 'canceled') continue;
       const colIssues = st.issues
-        .filter(i => i.status === cst.id)
+        .filter(i => colOf(i.status) === cst.id)
         .sort((a, b) => a.order - b.order);
 
       const col = document.createElement('section');
@@ -190,7 +193,7 @@ export function renderBoard(view) {
         y: Math.min(point.y, innerHeight - 60),
         count: 110,
         power: 10,
-        colors: ['#6FA06B', '#B85C43', '#D3864F', '#D9A648', '#D8D0C2'],
+        colors: ['#6FA06B', '#C17338', '#E2A55E', '#D9A648', '#E4E0D1'],
       });
     }
   }

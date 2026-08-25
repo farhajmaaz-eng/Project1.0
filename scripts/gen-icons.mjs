@@ -40,9 +40,9 @@ function draw(size) {
   const img = Buffer.alloc(size*size*4);
   const s = size/32;
   const tiles = [
-    [3,3,12,12,3.5,'#D8D0C2',0.55],
-    [17,3,12,12,3.5,'#D8D0C2',0.75],
-    [3,17,12,12,3.5,'#D8D0C2',0.35],
+    [3,3,12,12,3.5,'#E4E0D1',0.55],
+    [17,3,12,12,3.5,'#E4E0D1',0.75],
+    [3,17,12,12,3.5,'#E4E0D1',0.35],
   ];
   for (let y=0;y<size;y++){
     for (let x=0;x<size;x++){
@@ -51,7 +51,7 @@ function draw(size) {
       // background: dark rounded square, full-bleed for maskable safety
       const bgD = sdRoundRect(px,py,16,16,15.2,15.2,7.5);
       const bgA = cov(bgD-0.4);
-      if (bgA>0){ r=0x18;g=0x23;b=0x2B;a=bgA; }
+      if (bgA>0){ r=0x14;g=0x20;b=0x1B;a=bgA; }
       for (const [tx,ty,tw,th,tr,col,op] of tiles){
         const d = sdRoundRect(px,py,tx+tw/2,ty+th/2,tw/2,tr);
         const ca = cov(d)*op*a;
@@ -63,7 +63,7 @@ function draw(size) {
       // iris circle tile
       const cd = Math.hypot(px-23,py-23)-6;
       const ca = cov(cd)*a;
-      if (ca>0){ r=r*(1-ca)+0xB8*ca; g=g*(1-ca)+0x5C*ca; b=b*(1-ca)+0x43*ca; a=Math.max(a,ca); }
+      if (ca>0){ r=r*(1-ca)+0xC1*ca; g=g*(1-ca)+0x73*ca; b=b*(1-ca)+0x38*ca; a=Math.max(a,ca); }
       const i=(y*size+x)*4;
       img[i]=Math.round(r); img[i+1]=Math.round(g); img[i+2]=Math.round(b); img[i+3]=Math.round(a*255);
     }

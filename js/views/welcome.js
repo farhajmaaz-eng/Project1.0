@@ -14,7 +14,7 @@ const LOGO = `
   <rect x="3" y="3" width="12" height="12" rx="3.5" fill="#8A8578" opacity=".55"/>
   <rect x="17" y="3" width="12" height="12" rx="3.5" fill="#8A8578" opacity=".75"/>
   <rect x="3" y="17" width="12" height="12" rx="3.5" fill="#8A8578" opacity=".35"/>
-  <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #B85C43)"/>
+  <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #C17338)"/>
 </svg>`;
 
 const POINTS = [
@@ -36,7 +36,7 @@ export function renderWelcome(view, mode = 'signup') {
             <rect x="3" y="3" width="12" height="12" rx="3.5" fill="currentColor"/>
             <rect x="17" y="3" width="12" height="12" rx="3.5" fill="currentColor"/>
             <rect x="3" y="17" width="12" height="12" rx="3.5" fill="currentColor"/>
-            <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #B85C43)"/>
+            <rect x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #C17338)"/>
           </svg>
         </div>
         <div class="wl-brand">${LOGO}<b>tessera</b></div>
