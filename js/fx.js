@@ -35,7 +35,11 @@ function ensure(id, className) {
 function wirePointer() {
   const aura = ensure('fx-aura');
   const ambient = ensure('fx-ambient');
-  ambient.append(document.createElement('i'), document.createElement('i'));
+  ambient.append(
+    document.createElement('i'),
+    document.createElement('i'),
+    document.createElement('i'),
+  );
 
   let tx = innerWidth / 2, ty = innerHeight * 0.42;  // target
   let ax = tx, ay = ty;                              // aura (lazy)

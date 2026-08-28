@@ -425,6 +425,228 @@ button.linkish:hover::after, a.linkish:hover::after { transform: scaleX(1); }
   animation: pop-check .45s var(--bounce) backwards .4s;
 }
 
+/* ===========================================================================
+   MAXIMALISM — more of everything, everywhere, in service of the dye.
+   Layered canvases, ornamented cards, gradient type, glowing edges.
+   All var-driven: every accent dye re-skins it all.
+   ======================================================================== */
+
+/* ---- the canvas itself: dot-grid over drifting color fields ---- */
+body {
+  background:
+    radial-gradient(circle at 1px 1px,
+      color-mix(in srgb, var(--text) 4.5%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    radial-gradient(120vw 60vh at 110% -10%,
+      color-mix(in srgb, var(--accent-2) 7%, transparent), transparent 60%),
+    radial-gradient(100vw 50vh at -10% 110%,
+      color-mix(in srgb, var(--accent) 8%, transparent), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
+#app::before { opacity: .75; }
+#app::after  { opacity: .68; }
+#fx-ambient i:nth-child(3) {
+  width: 26vw; height: 26vw;
+  left: 34vw; top: 34vh;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--accent-2) 8%, transparent), transparent 70%);
+  animation: aurora-a 60s ease-in-out infinite;
+}
+
+/* ---- cards: gradient washes, crown lights, corner glows ---- */
+.card, .rail-card, .onboard, .wl-card, .stat {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 45%),
+    radial-gradient(120% 90% at 100% 0%,
+      color-mix(in srgb, var(--accent-2) 6%, transparent), transparent 55%),
+    var(--surface);
+  box-shadow: var(--shadow-1), inset 0 1px 0 color-mix(in srgb, #FFFFFF 6%, transparent);
+}
+.card:hover, .rail-card:hover, .wl-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  box-shadow: var(--shadow-2), 0 0 32px -12px color-mix(in srgb, var(--accent) 35%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #FFFFFF 8%, transparent);
+}
+
+/* ---- headings: gradient ink ---- */
+.view-head h1, .entity-head h1, .wl-pitch h1 {
+  background: linear-gradient(105deg, var(--text) 35%, var(--accent-2) 68%, var(--accent) 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.view-sub {
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.view-sub::before {
+  content: "◆";
+  margin-right: 7px;
+  color: var(--accent);
+  animation: wiggle 4s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ---- buttons: glow armor for primaries, gradient hovers for the rest ---- */
+.btn.primary {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 2px 6px rgba(0,0,0,.3),
+    0 0 26px -6px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+.btn.primary:hover {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 2px 8px rgba(0,0,0,.3),
+    0 0 36px -4px color-mix(in srgb, var(--accent) 85%, transparent);
+}
+.btn.ghost:hover, .btn.subtle:hover, .btn.soft:hover {
+  background: linear-gradient(120deg, var(--accent-faint), transparent 85%);
+}
+.btn.sm { font-weight: 600; }
+
+/* ---- the FAB gets its own orbiting halo ---- */
+.fab { overflow: visible; }
+.fab::before {
+  content: "";
+  position: absolute; inset: -5px;
+  border-radius: 22px;
+  background: conic-gradient(from var(--fx-angle, 0deg),
+    transparent 0%, var(--accent) 18%, transparent 38%, var(--accent-2) 62%, transparent 82%);
+  filter: blur(7px);
+  opacity: .55;
+  z-index: -1;
+  animation: fx-orbit 3.2s linear infinite;
+}
+
+/* ---- sidebar: tinted field, gradient active pill ---- */
+.sidebar {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 7%, var(--bg-2)),
+    var(--bg-2) 42%, var(--bg-2));
+}
+.sb-item.on {
+  background: linear-gradient(100deg, var(--accent-dim), transparent 90%);
+  box-shadow: inset 2.5px 0 0 var(--accent);
+}
+.sb-brand h2, .sb-ws {
+  background: linear-gradient(100deg, var(--text), var(--accent-text));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- kbd: tiny machined keys ---- */
+kbd {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--text) 13%, transparent),
+    color-mix(in srgb, var(--text) 5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text) 26%, transparent);
+  box-shadow: 0 1.5px 0 color-mix(in srgb, var(--text) 20%, transparent);
+}
+
+/* ---- avatars: dyed rings ---- */
+.avatar { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 32%, transparent); }
+
+/* ---- empty states: halo'd icon, gradient titles ---- */
+.empty svg { filter: drop-shadow(0 0 20px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.empty h3 {
+  background: linear-gradient(105deg, var(--text-2), var(--accent-text));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- toasts: gradient frame ---- */
+.toast {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--raise), var(--raise)) padding-box,
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 55%, transparent),
+      color-mix(in srgb, var(--accent-2) 30%, transparent)) border-box;
+  box-shadow: var(--shadow-2), 0 0 30px -10px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* ---- menus, palette, modals: interior wash + accent carets ---- */
+.menu, .modal, .palette {
+  background:
+    radial-gradient(140% 60% at 50% 0%,
+      color-mix(in srgb, var(--accent) 5%, transparent), transparent 60%),
+    var(--surface);
+}
+.menu-item:hover { background: linear-gradient(100deg, var(--accent-faint), transparent 90%); }
+.pal-item.sel {
+  background: linear-gradient(100deg, var(--accent-faint), transparent 90%);
+  box-shadow: inset 2.5px 0 0 var(--accent);
+}
+.palette-input input { caret-color: var(--accent); }
+
+/* ---- drawer: a gradient ribbon down its spine (desktop panel only —
+   ≤640px it becomes a bottom sheet with no left edge) ---- */
+@media (min-width: 641px) {
+  .drawer {
+    border-left: 2px solid;
+    border-image: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 8%, transparent)) 1;
+  }
+}
+
+/* ---- board: crowned columns, tinted cards ---- */
+.bcol-head {
+  padding-bottom: 8px;
+  border-bottom: 2px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.bcard {
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent 55%),
+    var(--surface);
+}
+.bcard:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: var(--shadow-2), 0 0 26px -10px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* ---- AI chat: tinted bubbles ---- */
+.bubble {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
+    var(--surface);
+}
+
+/* ---- settings: gradient active nav pill ---- */
+.set-nav button.on {
+  background: linear-gradient(100deg, var(--accent-dim), transparent 85%);
+  color: var(--accent-text);
+}
+
+/* ---- welcome: cards that lift, brand that glows ---- */
+.wl-card { transition: transform .25s var(--spring), box-shadow .25s ease, border-color .2s; }
+.wl-card:hover { transform: translateY(-3px); }
+.wl-brand b {
+  background: linear-gradient(100deg, var(--text), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- scrollbars: dyed thumbs ---- */
+*:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 38%, var(--line-2));
+  background-clip: padding-box;
+}
+
+/* ---- selection with conviction ---- */
+::selection {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--on-accent);
+}
+
+/* ---- restraint switches, as always ---- */
+@media (prefers-reduced-motion: reduce) {
+  .fab::before { animation: none; }
+  .view-sub::before { animation: none; }
+}
+@media (hover: none) {
+  .card:hover, .rail-card:hover, .wl-card:hover, .bcard:hover { box-shadow: var(--shadow-1); }
+}
+
 }
 
 @media (hover: none), (pointer: coarse) {
