@@ -1,7 +1,7 @@
 /* Tessera service worker — offline-first app shell.
    Network first for navigations (so deploys land), cache first for assets. */
 
-const VERSION = 'tessera-v8-overdrive';
+const VERSION = 'tessera-v9-focus-accents';
 const SHELL = ['./', './index.html'];
 
 self.addEventListener('install', (event) => {

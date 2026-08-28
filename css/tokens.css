@@ -177,3 +177,66 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   accent weaves v1 — swap the copper thread for another dye.
+   html[data-accent] re-points the accent family; everything downstream
+   (color-mix glows, halos, gradients, ripples) follows automatically.
+   Copper is the default, so it needs no block.
+--------------------------------------------------------------------------- */
+
+[data-accent="moss"] {
+  --accent: #6F9A6B; --accent-hover: #7FAB7A; --accent-text: #8CBB86; --accent-2: #A4C89A;
+  --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
+  --sx-accent: #4F7A4C;
+}
+[data-theme="light"][data-accent="moss"] {
+  --accent: #4F7A4C; --accent-hover: #456D42; --accent-text: #456D42; --accent-2: #6F9A6B;
+}
+
+[data-accent="indigo"] {
+  --accent: #7181C1; --accent-hover: #8290CE; --accent-text: #93A1DB; --accent-2: #9AA7E0;
+  --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
+  --sx-accent: #4C5DA8;
+}
+[data-theme="light"][data-accent="indigo"] {
+  --accent: #4C5DA8; --accent-hover: #415092; --accent-text: #415092; --accent-2: #7181C1;
+}
+
+[data-accent="rose"] {
+  --accent: #C16373; --accent-hover: #D07484; --accent-text: #DC8595; --accent-2: #E28E9C;
+  --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
+  --sx-accent: #A84557;
+}
+[data-theme="light"][data-accent="rose"] {
+  --accent: #A84557; --accent-hover: #973A4B; --accent-text: #973A4B; --accent-2: #C16373;
+}
+
+[data-accent="teal"] {
+  --accent: #4E9A93; --accent-hover: #5FABA4; --accent-text: #74BCB5; --accent-2: #7CC3BB;
+  --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
+  --sx-accent: #33786F;
+}
+[data-theme="light"][data-accent="teal"] {
+  --accent: #33786F; --accent-hover: #2C6B62; --accent-text: #2C6B62; --accent-2: #4E9A93;
+}
+
+[data-accent="violet"] {
+  --accent: #9A6FC1; --accent-hover: #A880CD; --accent-text: #B792D8; --accent-2: #BD9ADC;
+  --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
+  --sx-accent: #7A4FA3;
+}
+[data-theme="light"][data-accent="violet"] {
+  --accent: #7A4FA3; --accent-hover: #6C4392; --accent-text: #6C4392; --accent-2: #9A6FC1;
+}
+

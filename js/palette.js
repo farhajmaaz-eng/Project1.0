@@ -40,6 +40,7 @@ export function openPalette(initialQuery = '') {
     const staticItems = [
       { group: 'Actions', icon: 'plus', label: 'New issue', kbd: 'C', run: () => { close(); import('./new-issue.js').then(m => m.openNewIssue()); } },
       { group: 'Actions', icon: 'doc', label: 'New page', run: () => { close(); import('./views/docs.js').then(m => m.createAndOpenPage()); } },
+      { group: 'Actions', icon: 'clock', label: 'Start a focus session', kbd: 'F', run: () => { close(); import('./focus.js').then(m => m.openFocusPicker()); } },
       {
         group: 'Actions', icon: S().settings.theme === 'light' ? 'moon' : 'sun',
         label: `Switch to ${S().settings.theme === 'light' ? 'dark' : 'light'} theme`, run: () => { close(); import('./main.js').then(m => m.cycleTheme()); },

@@ -52,7 +52,8 @@ export function renderBoard(view) {
         <header class="bcol-head">
           ${statusIcon(cst.id, cst.color, 14)}
           <span>${esc(cst.name)}</span>
-          <span class="count" data-count>${colIssues.length}</span>
+          <span class="count ${cst.id === 'doing' && colIssues.length > 5 ? 'hot' : ''}" data-count
+            title="${cst.id === 'doing' && colIssues.length > 5 ? 'Heavy WIP — finishing beats starting' : ''}">${colIssues.length}</span>
           <span style="flex:1"></span>
           <button class="icon-btn" title="Add issue" data-add>${ico('plus', 13)}</button>
         </header>

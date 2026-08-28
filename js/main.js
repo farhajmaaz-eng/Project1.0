@@ -29,6 +29,7 @@ export function applyThemeFromSettings() {
   let pref = S()?.settings.theme || 'dark';
   if (pref === 'system') pref = media.matches ? 'light' : 'dark';
   document.documentElement.dataset.theme = pref;
+  document.documentElement.dataset.accent = S()?.settings.accent || 'copper';
   const btn = document.querySelector('#sidebar .sb-foot [data-theme]');
   if (btn) btn.innerHTML = ico(pref === 'light' ? 'moon' : 'sun', 15);
 }
@@ -311,6 +312,10 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault(); shortcutsModal(); break;
     case 't':
       e.preventDefault(); cycleTheme(); break;
+    case 'f':
+      e.preventDefault();
+      import('./focus.js').then(m => m.openFocusPicker());
+      break;
   }
 });
 
@@ -322,6 +327,7 @@ const SHORTCUTS = [
   ['General', [
     ['⌘ K', 'Command palette & search'],
     ['C', 'New issue'],
+    ['F', 'Focus session'],
     ['B', 'Go to board'],
     ['T', 'Toggle theme'],
     ['?', 'This dialog'],

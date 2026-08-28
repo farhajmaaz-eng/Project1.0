@@ -415,7 +415,7 @@ input[type="date"].input::-webkit-calendar-picker-indicator { filter: invert(.6)
 .card, .stat, .rail-card, .proj-card:not(.pc-add), .bcard, .entity-head,
 .modal, .palette, .menu, .toast, .ai-composer, .wl-card, .onboard,
 .slash, .composer-box, .tbl-tools, .bubble, .sug-chip, .seg,
-.input, select.input, textarea.input, .search-box {
+.input, select.input, textarea.input, .search-box, .focus-pill {
   --text: var(--sx-ink);
   --text-2: var(--sx-ink-2);
   --text-3: var(--sx-ink-3);

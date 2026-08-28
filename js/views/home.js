@@ -7,7 +7,7 @@ import { ico } from './../icons.js';
 import {
   S, you, issueRef, docById, activeCycle,
 } from './../store.js';
-import { issueRowHTML, wireIssueRows, emptyState } from './../bits.js';
+import { issueRowHTML, wireIssueRows, emptyState, sparkline } from './../bits.js';
 import { openIssue } from './../issue-drawer.js';
 import { nav } from './../nav.js';
 import { celebrate } from './../motion.js';
@@ -28,6 +28,14 @@ export function renderHome(view) {
   const doneThisWeek = s.issues.filter(i => i.status === 'done' && i.updatedAt > weekAgoTs);
   const dueSoon = mineOpen.filter(i => i.due && dayDiff(i.due) <= 6)
     .sort((a, b) => (a.due < b.due ? -1 : 1)).slice(0, 7);
+
+  /* 14-day activity — issues touched per day, straight from updatedAt */
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const activity = [...Array(14)].map((_, k) => {
+    const dayStart = today0.getTime() - (13 - k) * 86400000;
+    return s.issues.filter(i => i.updatedAt >= dayStart && i.updatedAt < dayStart + 86400000).length;
+  });
+  const touched = activity.reduce((a, b) => a + b, 0);
 
   const cyc = activeCycle();
   let cycStats = null;
@@ -122,6 +130,12 @@ export function renderHome(view) {
             ${cycStats.cyc.goal ? `<p class="faint small" style="margin-top:10px;line-height:1.5">${esc(cycStats.cyc.goal)}</p>` : ''}
             <button class="btn subtle sm" style="margin-top:10px" data-goto-cycle>Open cycle</button>
           </div>` : ''}
+
+          <div class="rail-card">
+            <h3>Activity · last 14 days</h3>
+            ${sparkline(activity, { w: 232, h: 42 })}
+            <p class="faint small" style="margin-top:8px">${touched === 1 ? '1 issue touch' : `${touched} issue touches`} — every edit counts.</p>
+          </div>
 
           <div class="rail-card">
             <h3>Recent pages</h3>

@@ -24,6 +24,16 @@ const SECTIONS = [
   ['about', 'book', 'About'],
 ];
 
+const ACCENTS = [
+  ['copper', '#C17338', '#E2A55E', 'Copper · default'],
+  ['moss', '#6F9A6B', '#A4C89A', 'Moss'],
+  ['indigo', '#7181C1', '#9AA7E0', 'Indigo'],
+  ['rose', '#C16373', '#E28E9C', 'Rose'],
+  ['teal', '#4E9A93', '#7CC3BB', 'Teal'],
+  ['violet', '#9A6FC1', '#BD9ADC', 'Violet'],
+];
+
+
 export function renderSettings(view) {
   const s = S();
   const me = you();
@@ -176,6 +186,15 @@ function appearanceSection(s, view) {
             `<button data-v="${v}" class="${s.settings.theme === v ? 'on' : ''}">${ico(icn, 13)}${lbl}</button>`).join('')}
         </div>
       </div>
+      <div class="set-row">
+        <div class="sr-main"><b>Accent</b><span>The thread that runs through everything</span></div>
+        <div class="accent-row" data-accents>
+          ${ACCENTS.map(([id, c1, c2, lbl]) => {
+            const on = (s.settings.accent || 'copper') === id;
+            return `<button class="swatch ${on ? 'on' : ''}" data-v="${id}" title="${lbl}" aria-label="Accent: ${lbl}" style="--sw1:${c1};--sw2:${c2}"></button>`;
+          }).join('')}
+        </div>
+      </div>
     </section>`;
   return el;
 }
@@ -313,6 +332,14 @@ function wireSection(sec, body, view) {
       import('./../main.js').then(m => m.themeWipe(b, () => m.applyThemeFromSettings()));
       body.querySelectorAll('[data-theme-seg] button').forEach(x =>
         x.classList.toggle('on', x.dataset.v === b.dataset.v));
+    });
+    body.querySelector('[data-accents]').addEventListener('click', (e) => {
+      const b = e.target.closest('.swatch');
+      if (!b || b.classList.contains('on')) return;
+      setSetting('accent', b.dataset.v);
+      document.documentElement.dataset.accent = b.dataset.v;
+      body.querySelectorAll('.swatch').forEach(x => x.classList.toggle('on', x === b));
+      toast(`Accent: ${b.title}`);
     });
   }
 
