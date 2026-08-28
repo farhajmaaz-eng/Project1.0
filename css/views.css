@@ -5,9 +5,9 @@
 /* ================= home ================= */
 .home-greet { margin: 8px 0 30px; }
 .home-greet h1 {
-  font-family: var(--serif); font-weight: 460;
-  font-size: clamp(27px, 3.4vw, 37px);
-  letter-spacing: -.014em;
+  font-family: var(--sans); font-weight: 600;
+  font-size: clamp(28px, 3.6vw, 40px);
+  letter-spacing: -.028em;
 }
 /* the name shimmers — a light band sweeps through the gradient text */
 .home-greet h1 em {

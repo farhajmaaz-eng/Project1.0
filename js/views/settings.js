@@ -25,12 +25,12 @@ const SECTIONS = [
 ];
 
 const ACCENTS = [
-  ['copper', '#C17338', '#E2A55E', 'Copper · default'],
-  ['moss', '#6F9A6B', '#A4C89A', 'Moss'],
-  ['indigo', '#7181C1', '#9AA7E0', 'Indigo'],
-  ['rose', '#C16373', '#E28E9C', 'Rose'],
-  ['teal', '#4E9A93', '#7CC3BB', 'Teal'],
-  ['violet', '#9A6FC1', '#BD9ADC', 'Violet'],
+  ['mint', '#3ECF8E', '#93EBC6', 'Mint · default'],
+  ['copper', '#E08D4D', '#F4C68F', 'Ember'],
+  ['moss', '#A8C46B', '#CDE3A0', 'Moss'],
+  ['indigo', '#6E8BF5', '#A9BAFB', 'Indigo'],
+  ['rose', '#E37B93', '#F2B6C4', 'Rose'],
+  ['teal', '#45C4BC', '#8AE2DC', 'Teal'],
 ];
 
 
@@ -190,7 +190,7 @@ function appearanceSection(s, view) {
         <div class="sr-main"><b>Accent</b><span>The thread that runs through everything</span></div>
         <div class="accent-row" data-accents>
           ${ACCENTS.map(([id, c1, c2, lbl]) => {
-            const on = (s.settings.accent || 'copper') === id;
+            const on = (s.settings.accent || 'mint') === id;
             return `<button class="swatch ${on ? 'on' : ''}" data-v="${id}" title="${lbl}" aria-label="Accent: ${lbl}" style="--sw1:${c1};--sw2:${c2}"></button>`;
           }).join('')}
         </div>

@@ -16,7 +16,7 @@ const logoSVG = `
   <rect class="tl tl-1" x="3" y="3" width="12" height="12" rx="3.5" fill="currentColor" opacity=".55"/>
   <rect class="tl tl-2" x="17" y="3" width="12" height="12" rx="3.5" fill="currentColor" opacity=".75"/>
   <rect class="tl tl-3" x="3" y="17" width="12" height="12" rx="3.5" fill="currentColor" opacity=".35"/>
-  <rect class="tl tl-4" x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #C17338)"/>
+  <rect class="tl tl-4" x="17" y="17" width="12" height="12" rx="6" fill="var(--accent, #3ECF8E)"/>
 </svg>`;
 
 const collapsedSections = new Set();

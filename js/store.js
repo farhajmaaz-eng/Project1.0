@@ -29,7 +29,7 @@ export function initStateFor({ name, email, workspace, prefix }) {
       openrouterKey: '',
     },
     seq: 1,
-    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#C17338', you: true }],
+    members: [{ id: 'me', name: name.trim(), role: 'Admin', color: '#3ECF8E', you: true }],
     labels: [
       { id: 'bug', name: 'Bug', color: '#B34A3E' },
       { id: 'feature', name: 'Feature', color: '#5F8A5E' },

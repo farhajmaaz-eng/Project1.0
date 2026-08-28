@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tessera — issues &amp; docs, one weave</title>
   <meta name="description" content="A local-first workspace that blends an issue tracker with a docs tool. Plan in tiles, write in flow." />
-  <meta name="theme-color" content="#14201B" media="(prefers-color-scheme: dark)" />
-  <meta name="theme-color" content="#EDEBE0" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0C0F16" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#F1F2F6" media="(prefers-color-scheme: light)" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,420;9..144,520;9..144,620&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <script>
     // Apply stored theme before first paint to avoid a flash.
     try {
@@ -46,11 +46,11 @@
     #boot {
       position: fixed; inset: 0; z-index: 400;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-      background: var(--bg, #14201B);
+      background: var(--bg, #0C0F16);
       animation: boot-away .5s ease .95s forwards;
       pointer-events: none;
     }
-    [data-theme="light"] #boot { background: #EDEBE0; }
+    [data-theme="light"] #boot { background: #F1F2F6; }
     .boot-mark { position: relative; display: grid; grid-template-columns: 22px 22px; gap: 5px; }
     /* a comet of light orbits the assembling mark while it works */
     .boot-mark::before {
@@ -58,7 +58,7 @@
       position: absolute; inset: -16px;
       border-radius: 50%;
       background: conic-gradient(from 0deg,
-        transparent 0% 68%, color-mix(in srgb, var(--accent, #C17338) 70%, transparent) 84%, transparent 98%);
+        transparent 0% 68%, color-mix(in srgb, var(--accent, #3ECF8E) 70%, transparent) 84%, transparent 98%);
       filter: blur(3px);
       animation: boot-orbit 1.2s linear infinite;
       opacity: .9;
@@ -67,24 +67,25 @@
     .boot-mark i {
       width: 22px; height: 22px;
       border-radius: 6px;
-      background: color-mix(in srgb, var(--text, #ECEADB) 55%, transparent);
+      background: color-mix(in srgb, var(--text, #E8EBF4) 55%, transparent);
       animation: boot-tile .7s cubic-bezier(.3,1.45,.42,1) backwards;
     }
     .boot-mark i:nth-child(1) { animation-delay: .05s; }
     .boot-mark i:nth-child(2) { animation-delay: .15s; }
     .boot-mark i:nth-child(3) { animation-delay: .25s; }
     .boot-mark i.accent {
-      background: linear-gradient(118deg, #C17338, #E2A55E);
+      background: var(--grad-accent, linear-gradient(118deg, #3ECF8E, #93EBC6));
       border-radius: 11px;
-      box-shadow: 0 0 24px rgba(193,115,56,.5);
+      box-shadow: 0 0 24px color-mix(in srgb, var(--accent, #3ECF8E) 50%, transparent);
       animation-delay: .38s;
     }
     @keyframes boot-tile {
       from { opacity: 0; transform: translateY(18px) scale(.3) rotate(-28deg); }
     }
     .boot-word {
-      font-family: Georgia, serif; font-size: 14px; letter-spacing: .16em;
-      color: color-mix(in srgb, var(--text, #ECEADB) 45%, transparent);
+      font-family: var(--sans, sans-serif); font-size: 13px; font-weight: 500;
+      letter-spacing: .34em; text-transform: uppercase;
+      color: color-mix(in srgb, var(--text, #E8EBF4) 45%, transparent);
       animation: fade-in .5s ease backwards .5s;
     }
     @keyframes boot-away { to { opacity: 0; visibility: hidden; } }

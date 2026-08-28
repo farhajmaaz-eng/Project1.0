@@ -1,133 +1,135 @@
 /* ---------------------------------------------------------------------------
-   Tessera · design tokens v5 — "Highland"
-   Deep pine canvas, warm bone cards, one copper thread through it all.
+   Tessera · design tokens v6 — "Nocturne"
+   Midnight canvas, obsidian panels, one electric thread through it all.
+   Space Grotesk speaks, Lora whispers, JetBrains Mono counts.
 --------------------------------------------------------------------------- */
 
 [data-theme="dark"] {
-  --bg:        #14201B;
-  --bg-2:      #0F1A15;
-  --surface:   #E4E0D1;   /* warm bone — every card wears it */
-  --raise:     #EEEADB;
-  --well:      #D7D3C0;
+  --bg:        #0C0F16;
+  --bg-2:      #080A10;
+  --surface:   #161B27;   /* obsidian — every card wears it */
+  --raise:     #1C2231;
+  --well:      #10141E;
 
-  --hover:     rgba(228, 224, 209, 0.06);
-  --active:    rgba(228, 224, 209, 0.11);
+  --hover:     rgba(190, 205, 235, 0.05);
+  --active:    rgba(190, 205, 235, 0.10);
 
-  --line:      rgba(228, 224, 209, 0.10);
-  --line-2:    rgba(228, 224, 209, 0.22);
+  --line:      rgba(170, 185, 220, 0.10);
+  --line-2:    rgba(170, 185, 220, 0.24);
 
-  --text:      #ECEADB;
-  --text-2:    #A2AB9C;
-  --text-3:    #707B6F;
+  --text:      #E8EBF4;
+  --text-2:    #9AA2B5;
+  --text-3:    #666F84;
 
-  --accent:       #C17338;
-  --accent-hover: #D28347;
-  --accent-text:  #D28B4C;
-  --accent-2:     #E2A55E;
-  --accent-dim:   rgba(193, 115, 56, 0.20);
-  --accent-faint: rgba(193, 115, 56, 0.09);
-  --on-accent:    #FCF3E4;
+  --accent:       #3ECF8E;
+  --accent-hover: #55DFA0;
+  --accent-text:  #4FD79A;
+  --accent-2:     #93EBC6;
+  --accent-dim:   color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --on-accent:    #06251A;
 
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
 
-  --danger:    #E06C55;
-  --danger-dim:rgba(224, 108, 85, 0.14);
-  --ok:        #7FAE83;
-  --warn:      #D9A648;
+  --danger:    #F0715C;
+  --danger-dim:rgba(240, 113, 92, 0.14);
+  --ok:        #4CC38A;
+  --warn:      #E5B454;
 
-  --scrim:     rgba(4, 10, 8, 0.64);
+  --scrim:     rgba(3, 5, 12, 0.72);
 
-  --shadow-1:  0 1px 2px rgba(3,8,6,.5), 0 0 0 1px var(--line);
-  --shadow-2:  0 2px 6px rgba(3,8,6,.45), 0 18px 44px rgba(3,8,6,.42), 0 0 0 1px var(--line);
-  --shadow-3:  0 6px 18px rgba(3,8,6,.5), 0 32px 90px rgba(3,8,6,.55), 0 0 0 1px var(--line-2);
+  --shadow-1:  0 1px 2px rgba(0,0,0,.5), 0 0 0 1px var(--line);
+  --shadow-2:  0 2px 6px rgba(0,0,0,.45), 0 18px 44px rgba(0,0,0,.5), 0 0 0 1px var(--line);
+  --shadow-3:  0 6px 18px rgba(0,0,0,.5), 0 32px 90px rgba(0,0,0,.6), 0 0 0 1px var(--line-2);
 
-  --code-bg:   #0F1914;
+  --code-bg:   #0E121B;
 
   color-scheme: dark;
 
-  /* surface exchange — values that --text/--line/… resolve to INSIDE
-     bone-surfaced containers (see the .stone-context rule in base.css) */
-  --sx-ink:     #232B25;
-  --sx-ink-2:   #5B6156;
-  --sx-ink-3:   #83877A;
-  --sx-line:    rgba(20, 32, 27, 0.16);
-  --sx-line-2:  rgba(20, 32, 27, 0.32);
-  --sx-hover:   rgba(20, 32, 27, 0.06);
-  --sx-active:  rgba(20, 32, 27, 0.11);
-  --sx-well:    #D2CDB9;
-  --sx-code:    #D6D1BD;
-  --sx-accent:  #A55D28;
-  --sx-warn:    #8F6A15;
-  --sx-danger:  #AE3D2C;
-  --sx-ok:      #47714E;
+  /* panel exchange — values that --text/--line/… resolve to INSIDE
+     surfaced containers (see the .stone-context rule in base.css).
+     Panels are dark now, so the context simply carries the night. */
+  --sx-ink:     #E8EBF4;
+  --sx-ink-2:   #9AA2B5;
+  --sx-ink-3:   #666F84;
+  --sx-line:    rgba(170, 185, 220, 0.14);
+  --sx-line-2:  rgba(170, 185, 220, 0.30);
+  --sx-hover:   rgba(190, 205, 235, 0.06);
+  --sx-active:  rgba(190, 205, 235, 0.12);
+  --sx-well:    #131826;
+  --sx-code:    #121724;
+  --sx-accent:  #3ECF8E;
+  --sx-warn:    #E5B454;
+  --sx-danger:  #F0715C;
+  --sx-ok:      #4CC38A;
 }
 
 [data-theme="light"] {
-  --bg:        #EDEBE0;
-  --bg-2:      #E4E2D4;
-  --surface:   #FAF8ED;
-  --raise:     #FEFDF6;
-  --well:      #E3E0CD;
+  --bg:        #F1F2F6;
+  --bg-2:      #E9EBF1;
+  --surface:   #FFFFFF;
+  --raise:     #FFFFFF;
+  --well:      #E5E8EF;
 
-  --hover:     rgba(20, 32, 27, 0.05);
-  --active:    rgba(20, 32, 27, 0.09);
+  --hover:     rgba(23, 28, 40, 0.05);
+  --active:    rgba(23, 28, 40, 0.09);
 
-  --line:      rgba(20, 32, 27, 0.10);
-  --line-2:    rgba(20, 32, 27, 0.22);
+  --line:      rgba(23, 28, 40, 0.10);
+  --line-2:    rgba(23, 28, 40, 0.22);
 
-  --text:      #1A2620;
-  --text-2:    #4D574E;
-  --text-3:    #7E857A;
+  --text:      #171C2A;
+  --text-2:    #4E5568;
+  --text-3:    #81899C;
 
-  --accent:       #A85E28;
-  --accent-hover: #96521F;
-  --accent-text:  #96521F;
-  --accent-2:     #C97F3C;
-  --accent-dim:   rgba(168, 94, 40, 0.14);
-  --accent-faint: rgba(168, 94, 40, 0.07);
-  --on-accent:    #FCF3E4;
+  --accent:       #0FA36F;
+  --accent-hover: #0C8F60;
+  --accent-text:  #0C8F60;
+  --accent-2:     #3ECF8E;
+  --accent-dim:   color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 7%, transparent);
+  --on-accent:    #FFFFFF;
 
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
 
-  --danger:    #C24536;
-  --danger-dim:rgba(194, 69, 54, 0.10);
-  --ok:        #47714E;
-  --warn:      #8F6A15;
+  --danger:    #CE4A32;
+  --danger-dim:rgba(206, 74, 50, 0.10);
+  --ok:        #1F8A5B;
+  --warn:      #946F14;
 
-  --scrim:     rgba(26, 30, 28, 0.38);
+  --scrim:     rgba(20, 26, 40, 0.40);
 
-  --shadow-1:  0 1px 2px rgba(28,34,30,.06), 0 0 0 1px var(--line);
-  --shadow-2:  0 2px 6px rgba(28,34,30,.05), 0 16px 40px rgba(28,34,30,.10), 0 0 0 1px var(--line);
-  --shadow-3:  0 8px 20px rgba(28,34,30,.07), 0 32px 80px rgba(28,34,30,.16), 0 0 0 1px var(--line-2);
+  --shadow-1:  0 1px 2px rgba(25,35,60,.07), 0 0 0 1px var(--line);
+  --shadow-2:  0 2px 6px rgba(25,35,60,.05), 0 16px 40px rgba(25,35,60,.10), 0 0 0 1px var(--line);
+  --shadow-3:  0 8px 20px rgba(25,35,60,.07), 0 32px 80px rgba(25,35,60,.16), 0 0 0 1px var(--line-2);
 
-  --code-bg:   #EBE8D7;
+  --code-bg:   #ECEEF4;
 
   color-scheme: light;
 
-  --sx-ink:     #1C2620;
-  --sx-ink-2:   #565A4E;
-  --sx-ink-3:   #85836F;
-  --sx-line:    rgba(20, 32, 27, 0.12);
-  --sx-line-2:  rgba(20, 32, 27, 0.26);
-  --sx-hover:   rgba(20, 32, 27, 0.05);
-  --sx-active:  rgba(20, 32, 27, 0.09);
-  --sx-well:    #EAE6D0;
-  --sx-code:    #ECE8D4;
-  --sx-accent:  #A85E28;
-  --sx-warn:    #8F6A15;
-  --sx-danger:  #B23A2B;
-  --sx-ok:      #47714E;
+  --sx-ink:     #171C2A;
+  --sx-ink-2:   #4E5568;
+  --sx-ink-3:   #81899C;
+  --sx-line:    rgba(23, 28, 40, 0.12);
+  --sx-line-2:  rgba(23, 28, 40, 0.26);
+  --sx-hover:   rgba(23, 28, 40, 0.05);
+  --sx-active:  rgba(23, 28, 40, 0.09);
+  --sx-well:    #EAECF2;
+  --sx-code:    #EEF0F6;
+  --sx-accent:  #0FA36F;
+  --sx-warn:    #946F14;
+  --sx-danger:  #C0402C;
+  --sx-ok:      #1F8A5B;
 }
 
 :root {
-  --sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --serif: "Fraunces", Georgia, serif;
-  --mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --serif: "Lora", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --r-s: 8px;
-  --r-m: 11px;
-  --r-l: 15px;
-  --r-xl: 20px;
+  --r-s: 6px;
+  --r-m: 9px;
+  --r-l: 13px;
+  --r-xl: 18px;
 
   --sidebar-w: 264px;
 
@@ -179,64 +181,74 @@
 }
 
 /* ---------------------------------------------------------------------------
-   accent weaves v1 — swap the copper thread for another dye.
+   accent weaves v2 — swap the electric thread for another dye.
    html[data-accent] re-points the accent family; everything downstream
    (color-mix glows, halos, gradients, ripples) follows automatically.
-   Copper is the default, so it needs no block.
+   Mint is the default, so it needs no block. Panel context follows the dye.
 --------------------------------------------------------------------------- */
 
-[data-accent="moss"] {
-  --accent: #6F9A6B; --accent-hover: #7FAB7A; --accent-text: #8CBB86; --accent-2: #A4C89A;
+[data-accent="copper"] {
+  --accent: #E08D4D; --accent-hover: #EBA060; --accent-text: #F0AC71; --accent-2: #F4C68F;
   --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
   --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
-  --sx-accent: #4F7A4C;
+  --sx-accent: var(--accent);
+}
+[data-theme="light"][data-accent="copper"] {
+  --accent: #B26224; --accent-hover: #9C531C; --accent-text: #9C531C; --accent-2: #E08D4D;
+}
+
+[data-accent="moss"] {
+  --accent: #A8C46B; --accent-hover: #B8D17E; --accent-text: #C2DA8D; --accent-2: #CDE3A0;
+  --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
+  --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
+  --sx-accent: var(--accent);
 }
 [data-theme="light"][data-accent="moss"] {
-  --accent: #4F7A4C; --accent-hover: #456D42; --accent-text: #456D42; --accent-2: #6F9A6B;
+  --accent: #71912F; --accent-hover: #627E27; --accent-text: #627E27; --accent-2: #A8C46B;
 }
 
 [data-accent="indigo"] {
-  --accent: #7181C1; --accent-hover: #8290CE; --accent-text: #93A1DB; --accent-2: #9AA7E0;
+  --accent: #6E8BF5; --accent-hover: #829CF7; --accent-text: #96AAF9; --accent-2: #A9BAFB;
   --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
   --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
-  --sx-accent: #4C5DA8;
+  --sx-accent: var(--accent);
 }
 [data-theme="light"][data-accent="indigo"] {
-  --accent: #4C5DA8; --accent-hover: #415092; --accent-text: #415092; --accent-2: #7181C1;
+  --accent: #3D5BD1; --accent-hover: #334DB8; --accent-text: #334DB8; --accent-2: #6E8BF5;
 }
 
 [data-accent="rose"] {
-  --accent: #C16373; --accent-hover: #D07484; --accent-text: #DC8595; --accent-2: #E28E9C;
+  --accent: #E37B93; --accent-hover: #E990A5; --accent-text: #EDA3B4; --accent-2: #F2B6C4;
   --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
   --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
-  --sx-accent: #A84557;
+  --sx-accent: var(--accent);
 }
 [data-theme="light"][data-accent="rose"] {
-  --accent: #A84557; --accent-hover: #973A4B; --accent-text: #973A4B; --accent-2: #C16373;
+  --accent: #C24463; --accent-hover: #AD3A57; --accent-text: #AD3A57; --accent-2: #E37B93;
 }
 
 [data-accent="teal"] {
-  --accent: #4E9A93; --accent-hover: #5FABA4; --accent-text: #74BCB5; --accent-2: #7CC3BB;
+  --accent: #45C4BC; --accent-hover: #57D1C9; --accent-text: #6CD8D1; --accent-2: #8AE2DC;
   --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
   --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
-  --sx-accent: #33786F;
+  --sx-accent: var(--accent);
 }
 [data-theme="light"][data-accent="teal"] {
-  --accent: #33786F; --accent-hover: #2C6B62; --accent-text: #2C6B62; --accent-2: #4E9A93;
+  --accent: #0E8F88; --accent-hover: #0B7B75; --accent-text: #0B7B75; --accent-2: #45C4BC;
 }
 
 [data-accent="violet"] {
-  --accent: #9A6FC1; --accent-hover: #A880CD; --accent-text: #B792D8; --accent-2: #BD9ADC;
+  --accent: #A97FE0; --accent-hover: #B893E6; --accent-text: #C5A6EB; --accent-2: #D0B8F0;
   --accent-dim: color-mix(in srgb, var(--accent) 20%, transparent);
   --accent-faint: color-mix(in srgb, var(--accent) 9%, transparent);
   --grad-accent: linear-gradient(118deg, var(--accent) 10%, var(--accent-2) 95%);
-  --sx-accent: #7A4FA3;
+  --sx-accent: var(--accent);
 }
 [data-theme="light"][data-accent="violet"] {
-  --accent: #7A4FA3; --accent-hover: #6C4392; --accent-text: #6C4392; --accent-2: #9A6FC1;
+  --accent: #7E4FC4; --accent-hover: #6E43AC; --accent-text: #6E43AC; --accent-2: #A97FE0;
 }
-

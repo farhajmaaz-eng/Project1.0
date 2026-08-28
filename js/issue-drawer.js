@@ -463,7 +463,7 @@ export function openIssue(id) {
               confetti(btn, {
                 count: 90,
                 power: 9,
-                colors: ['#6FA06B', '#C17338', '#E2A55E', '#D9A648'],
+                colors: ['#3ECF8E', '#4CC38A', '#93EBC6', '#E5B454'],
               });
             }
             renderAll();

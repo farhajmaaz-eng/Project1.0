@@ -42,7 +42,7 @@ function ensureCanvas() {
   fxCtx.scale(dpr, dpr);
 }
 
-const DEFAULT_COLORS = ['#C17338', '#E2A55E', '#E4E0D1', '#7FAE83', '#D9A648', '#E06C55'];
+const DEFAULT_COLORS = ['#3ECF8E', '#93EBC6', '#5B8CFF', '#E8EBF4', '#E5B454', '#F0715C'];
 
 /**
  * Fire a burst of confetti from a viewport point.

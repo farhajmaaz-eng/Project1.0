@@ -213,8 +213,8 @@ body {
 
 .view-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .view-head h1 {
-  font-family: var(--serif);
-  font-weight: 500; font-size: 25px; letter-spacing: -.01em;
+  font-family: var(--sans);
+  font-weight: 600; font-size: 24px; letter-spacing: -.025em;
   flex: 1; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }

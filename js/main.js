@@ -29,7 +29,7 @@ export function applyThemeFromSettings() {
   let pref = S()?.settings.theme || 'dark';
   if (pref === 'system') pref = media.matches ? 'light' : 'dark';
   document.documentElement.dataset.theme = pref;
-  document.documentElement.dataset.accent = S()?.settings.accent || 'copper';
+  document.documentElement.dataset.accent = S()?.settings.accent || 'mint';
   const btn = document.querySelector('#sidebar .sb-foot [data-theme]');
   if (btn) btn.innerHTML = ico(pref === 'light' ? 'moon' : 'sun', 15);
 }
