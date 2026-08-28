@@ -211,7 +211,7 @@ body {
 .view-inner { max-width: 1060px; margin: 0 auto; padding: 36px 44px 96px; }
 .view-inner.wide { max-width: 1200px; }
 
-.view-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.view-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 6px; }
 .view-head h1 {
   font-family: var(--sans);
   font-weight: 600; font-size: 24px; letter-spacing: -.025em;

@@ -109,6 +109,18 @@ function ensureMobileChrome() {
       }
     };
     top.querySelector('[data-search]').onclick = () => openPalette();
+
+    /* thumb-reach New-issue button (mobile only, CSS decides) */
+    let fab = document.getElementById('fab');
+    if (!fab) {
+      fab = document.createElement('button');
+      fab.id = 'fab';
+      fab.className = 'fab';
+      fab.setAttribute('aria-label', 'New issue');
+      fab.innerHTML = ico('plus', 22);
+      fab.onclick = () => import('./new-issue.js').then(m => m.openNewIssue());
+      document.body.appendChild(fab);
+    }
   }
 }
 

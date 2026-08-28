@@ -66,7 +66,7 @@ export function renderIssues(view, route) {
         <button class="fchip" data-groupby></button>` : ''}
         <label class="search-box">${ico('search', 13)}<input data-q placeholder="Filter…" value="${esc(st.q)}"/></label>
         ${mine ? '' : `
-        <div class="seg" style="height:29px">
+        <div class="seg">
           <button class="on" data-gol_list>List</button>
           <button data-gob_board>Board</button>
         </div>`}

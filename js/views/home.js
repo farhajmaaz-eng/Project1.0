@@ -128,7 +128,7 @@ export function renderHome(view) {
                 `<span><i style="background:${st.color}"></i>${esc(st.name)} ${cycStats.byStatus[st.id]}</span>`).join('')}
             </div>
             ${cycStats.cyc.goal ? `<p class="faint small" style="margin-top:10px;line-height:1.5">${esc(cycStats.cyc.goal)}</p>` : ''}
-            <button class="btn subtle sm" style="margin-top:10px" data-goto-cycle>Open cycle</button>
+            <button class="btn subtle sm rail-cta" data-goto-cycle>Open cycle</button>
           </div>` : ''}
 
           <div class="rail-card">
@@ -147,7 +147,7 @@ export function renderHome(view) {
                   <span class="mr-title">${esc(d.title || 'Untitled')}</span>
                 </button>` : '';
             }).join('') : '<p class="faint small">Pages you edit will collect here.</p>'}
-            <button class="btn subtle sm" style="margin-top:8px" data-goto-docs>All docs</button>
+            <button class="btn subtle sm rail-cta" data-goto-docs>All docs</button>
           </div>
 
           <div class="rail-card">

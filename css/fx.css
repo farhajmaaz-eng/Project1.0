@@ -302,6 +302,111 @@ button.linkish:hover::after, a.linkish:hover::after { transform: scaleX(1); }
   animation: pop-check .3s var(--bounce);
 }
 
+/* ===========================================================================
+   overdrive v2 — BUTTON ORDER & MOTION PACK
+   Every button same height, same alignment, same press feel; icons lean
+   into their clicks; rows grow an accent spine; cards lift; focus breathes.
+   ======================================================================== */
+
+/* ---- view head: actions always dock right, wrap gracefully ---- */
+.view-head .btn { flex: none; }
+.view-head .btn { animation: rise .45s var(--glide-in) backwards .1s; }
+.view-sub { animation: fade-in .5s ease backwards .18s; }
+
+/* ---- toolbar: one control height to rule them all ---- */
+.toolbar .seg, .toolbar .fchip, .toolbar .search-box { height: 30px; }
+.fchip, .seg button { transition: background .14s ease, color .14s ease, transform .12s var(--ease), border-color .14s ease; }
+.fchip:active, .seg button:active { transform: scale(.96); }
+
+/* ---- buttons: living gradient + icons that lean in ---- */
+.btn svg { transition: transform .22s var(--bounce); }
+.btn:hover svg { transform: translateX(1px) scale(1.08); }
+.btn.primary {
+  background-size: 200% 100%;
+  animation: grad-pan 9s linear infinite;
+}
+.btn.primary:hover { animation-duration: 2.4s; }
+.btn:active { transform: translateY(1px) scale(.98); }
+
+.icon-btn {
+  transition: transform .16s var(--ease), background .15s ease, color .15s ease, opacity .15s ease;
+}
+.icon-btn:hover { transform: scale(1.1); }
+.icon-btn:active { transform: scale(.88); }
+
+/* ---- rail calls-to-action: full-width, one rhythm ---- */
+.rail-cta { display: flex; width: 100%; justify-content: center; margin-top: 10px; }
+
+/* ---- issue rows: an accent spine grows on hover/selection ---- */
+.irow {
+  position: relative;
+  transition: background .12s ease, transform .18s var(--ease-out), opacity .2s ease;
+}
+.irow::before {
+  content: "";
+  position: absolute; left: -6px; top: 22%; bottom: 22%;
+  width: 2.5px; border-radius: 2px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform .22s var(--ease-out);
+  pointer-events: none;
+}
+.irow:hover { transform: translateX(4px); }
+.irow:hover::before, .irow.sel::before { transform: scaleY(1); }
+.irow.sel { background: var(--hover); }
+
+/* ---- board cards: lift and settle ---- */
+.bcard {
+  transition: transform .22s var(--spring), box-shadow .22s ease, border-color .18s ease, opacity .2s ease;
+}
+.bcard:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); }
+
+/* ---- menus & sidebar: icons pop, nav leans ---- */
+.menu-item .mi-ic { transition: transform .18s var(--bounce), color .12s; }
+.menu-item:hover .mi-ic, .menu-item.sel .mi-ic { transform: scale(1.18); }
+.sb-item svg { transition: transform .2s var(--bounce); }
+.sb-item:hover svg { transform: translateX(1.5px); }
+.mini-row svg { transition: transform .2s var(--bounce); }
+.mini-row:hover svg { transform: scale(1.12); }
+
+/* ---- focus that breathes while you keyboard your way around ---- */
+@keyframes halo-breathe {
+  0%, 100% { outline-color: color-mix(in srgb, var(--accent) 38%, transparent); }
+  50%      { outline-color: color-mix(in srgb, var(--accent) 80%, transparent); }
+}
+:focus-visible { animation: halo-breathe 2.2s ease-in-out infinite; }
+
+/* ---- mobile FAB — the New-issue button lives where thumbs do ---- */
+.fab {
+  display: none;
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom, 0px));
+  z-index: 57;
+  width: 54px; height: 54px;
+  border-radius: 18px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  place-items: center;
+  box-shadow: 0 12px 30px -8px color-mix(in srgb, var(--accent) 60%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.28);
+  animation: fab-in .5s var(--spring) backwards .35s;
+  transition: transform .15s var(--ease);
+}
+.fab:active { transform: scale(.9); }
+@keyframes fab-in {
+  from { opacity: 0; transform: scale(.4) translateY(16px); }
+}
+@media (max-width: 900px) {
+  body:not(.auth-mode) .fab { display: grid; }
+}
+
+/* ---- restraint: no hover theatrics on touch ---- */
+@media (hover: none) {
+  .irow:hover, .bcard:hover { transform: none; }
+  .irow::before { display: none; }
+}
+
 }
 
 @media (hover: none), (pointer: coarse) {
