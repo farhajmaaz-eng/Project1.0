@@ -117,6 +117,7 @@ export function renderBoard(view) {
           ${priIcon(iss.priority, 12)}
           <span class="key-chip">${issueRef(iss)}</span>
           ${iss.due ? dueBadge(iss.due) : ''}
+          ${iss.estimate ? `<span class="key-chip" title="Estimate">${iss.estimate} pt</span>` : ''}
         </div>
         <div class="bc-title">${esc(iss.title || 'Untitled')}</div>
         <footer class="bcard-foot">

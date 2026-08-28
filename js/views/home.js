@@ -2,7 +2,7 @@
    Tessera · views/home v2 — greeting, live stats, onboarding, rail
 --------------------------------------------------------------------------- */
 
-import { esc, dayDiff, greeting, dayName, dateLine, countUp } from './../util.js';
+import { esc, dayDiff, greeting, dayName, dateLine, countUp, toISO } from './../util.js';
 import { ico } from './../icons.js';
 import {
   S, you, issueRef, docById, activeCycle,
@@ -37,6 +37,19 @@ export function renderHome(view) {
   });
   const touched = activity.reduce((a, b) => a + b, 0);
 
+  /* momentum — consecutive days (ending today, or yesterday if today is
+     still young) with at least one issue touch */
+  const touchedDays = new Set(
+    s.issues.filter(i => i.updatedAt).map(i => toISO(new Date(i.updatedAt))),
+  );
+  let streak = 0;
+  const probe = new Date(); probe.setHours(0, 0, 0, 0);
+  if (!touchedDays.has(toISO(probe))) probe.setDate(probe.getDate() - 1);
+  while (touchedDays.has(toISO(probe)) && streak < 365) {
+    streak++;
+    probe.setDate(probe.getDate() - 1);
+  }
+
   const cyc = activeCycle();
   let cycStats = null;
   if (cyc) {
@@ -69,7 +82,7 @@ export function renderHome(view) {
     <div class="view-inner">
       <header class="home-greet">
         <h1>${esc(greeting(now))}, <em>${esc(you().name.split(' ')[0])}</em></h1>
-        <p>${esc(dayName(now))} · ${esc(dateLine(now))} · ${partOfDay}</p>
+        <p>${esc(dayName(now))} · ${esc(dateLine(now))} · ${partOfDay}${streak >= 2 ? ` · <b class="streak">🔥 ${streak}-day streak</b>` : ''}</p>
       </header>
 
       <div class="stat-row">

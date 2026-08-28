@@ -17,6 +17,7 @@ import { mountEditor } from './editor.js';
 import { chatStream } from './openrouter.js';
 import { sanitizeAIText } from './views/ai.js';
 import { confetti, miniBurst, reduceMotion } from './motion.js';
+import { blocksToMarkdown } from './md.js';
 
 let current = null; // active drawer handle
 let currentId = null;
@@ -114,6 +115,7 @@ export function openIssue(id) {
         <aside class="props">
           <div class="prop-row"><label>Status</label><button class="prop-btn" data-prop="status"></button></div>
           <div class="prop-row"><label>Priority</label><button class="prop-btn" data-prop="priority"></button></div>
+          <div class="prop-row"><label>Estimate</label><button class="prop-btn" data-prop="estimate"></button></div>
           <div class="prop-row"><label>Assignee</label><button class="prop-btn" data-prop="assignee"></button></div>
           <div class="prop-row"><label>Labels</label><button class="prop-btn" data-prop="labels"></button></div>
           <div class="prop-row"><label>Project</label><button class="prop-btn" data-prop="project"></button></div>
@@ -173,6 +175,11 @@ export function openIssue(id) {
 
     body.querySelector('[data-prop="priority"]').innerHTML =
       `${priIcon(iss.priority, 13)}<span>${iss.priority === 'none' ? '<span class="ph">Priority</span>' : esc(cap(iss.priority))}</span>`;
+
+    body.querySelector('[data-prop="estimate"]').innerHTML =
+      iss.estimate
+        ? `<span class="est-pill mono">${iss.estimate}</span><span>${iss.estimate} point${iss.estimate === 1 ? '' : 's'}</span>`
+        : `<span class="ph">Estimate</span>`;
 
     const m = iss.assignee ? memberOf(iss.assignee) : null;
     body.querySelector('[data-prop="assignee"]').innerHTML = m
@@ -486,6 +493,22 @@ export function openIssue(id) {
         },
       });
     }
+    if (kind === 'estimate') {
+      openMenu({
+        anchor: btn, minWidth: 160,
+        items: [0, 1, 2, 3, 5, 8].map((n) => ({
+          value: n, label: n === 0 ? 'No estimate' : `${n} point${n === 1 ? '' : 's'}`,
+          checked: (iss.estimate || 0) === n,
+        })),
+        onSelect: (v) => {
+          const next = v || null;
+          if (next !== (iss.estimate || null)) {
+            updateIssue(iss.id, { estimate: next }, next ? `estimated at ${v} point${v === 1 ? '' : 's'}` : 'cleared the estimate');
+            flashProp(btn);
+          }
+        },
+      });
+    }
     if (kind === 'assignee') {
       openMenu({
         anchor: btn, minWidth: 200,
@@ -605,6 +628,7 @@ export function openIssue(id) {
       items: [
         { value: 'copylink', label: 'Copy link', icon: ico('key', 14) },
         { value: 'dup', label: 'Duplicate issue', icon: ico('copy', 14) },
+        { value: 'copymd', label: 'Copy as Markdown', icon: ico('copy', 14) },
         { value: 'duetoday', label: 'Due today', icon: ico('calendar', 14) },
         { value: 'clearDue', label: 'Clear due date', icon: ico('x', 14) },
         { sep: true },
@@ -624,6 +648,15 @@ export function openIssue(id) {
           flashSaved();
         }
         if (v === 'clearDue') { updateIssue(currentId, { due: null }); flashSaved(); }
+        if (v === 'copymd') {
+          const i2 = issueById(currentId);
+          if (i2) {
+            navigator.clipboard.writeText(issueToMarkdown(i2)).then(
+              () => toast('Copied as Markdown'),
+              () => toast('Clipboard is blocked in this browser'),
+            );
+          }
+        }
         if (v === 'del') {
           const snap = deleteIssue(currentId);
           close();
@@ -663,6 +696,43 @@ export function openIssue(id) {
   renderAll();
 
   return { close };
+}
+
+/** issue → clean Markdown for pasting anywhere (GitHub, Notion, docs…) */
+function issueToMarkdown(iss) {
+  const st = statusOf(iss.status);
+  const lines = [`# ${issueRef(iss)} · ${iss.title || 'Untitled'}`, ''];
+  lines.push(`- **Status:** ${st.name}`);
+  lines.push(`- **Priority:** ${iss.priority === 'none' ? 'None' : iss.priority[0].toUpperCase() + iss.priority.slice(1)}`);
+  const m = iss.assignee ? memberOf(iss.assignee) : null;
+  if (m) lines.push(`- **Assignee:** ${m.name}`);
+  if (iss.estimate) lines.push(`- **Estimate:** ${iss.estimate} point${iss.estimate === 1 ? '' : 's'}`);
+  if (iss.due) lines.push(`- **Due:** ${iss.due}`);
+  const proj = iss.project ? projectOf(iss.project) : null;
+  if (proj) lines.push(`- **Project:** ${proj.name}`);
+  const cyc = iss.cycle ? cycleOf(iss.cycle) : null;
+  if (cyc) lines.push(`- **Cycle:** ${cyc.name}`);
+  if (iss.labels.length) {
+    lines.push(`- **Labels:** ${iss.labels.map(id => labelOf(id)?.name).filter(Boolean).join(', ')}`);
+  }
+  lines.push('');
+  const desc = blocksToMarkdown(iss.blocks || []);
+  if (desc.trim()) lines.push('## Description', '', desc.trim(), '');
+  const kids = childrenIssues(iss.id);
+  if (kids.length) {
+    lines.push('## Subtasks', '');
+    for (const k of kids) {
+      lines.push(`- [${['done', 'canceled'].includes(k.status) ? 'x' : ' '}] ${issueRef(k)} ${k.title || 'Untitled'}`);
+    }
+    lines.push('');
+  }
+  if (iss.comments?.length) {
+    lines.push('## Comments', '');
+    for (const c of iss.comments) {
+      lines.push(`**${memberOf(c.authorId)?.name || 'Someone'}** — ${new Date(c.at).toLocaleDateString()}`, '', c.body, '');
+    }
+  }
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 }
 
 function parseSubtasks(raw = '') {

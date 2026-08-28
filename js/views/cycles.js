@@ -25,6 +25,8 @@ export function renderCycles(view) {
         ${s.cycles.map((c) => {
           const list = s.issues.filter(i => i.cycle === c.id);
           const closed = list.filter(i => ['done', 'canceled'].includes(i.status)).length;
+          const totalPts = list.filter(i => i.estimate).reduce((a, i) => a + i.estimate, 0);
+          const donePts = list.filter(i => ['done', 'canceled'].includes(i.status) && i.estimate).reduce((a, i) => a + i.estimate, 0);
           const pct = list.length ? Math.round(closed / list.length * 100) : 0;
           const state = c.startsAt <= now && c.endsAt >= now ? 'active' : c.startsAt > now ? 'upcoming' : 'past';
           return `
@@ -40,6 +42,7 @@ export function renderCycles(view) {
                 <span class="mono">${esc(relDay(c.startsAt))} – ${esc(relDay(c.endsAt))}</span>
                 <span style="flex:1"></span>
                 <span>${closed}/${list.length} closed</span>
+                ${totalPts ? `<span class="mono" title="Completed points / total points">${donePts}/${totalPts} pts</span>` : ''}
               </div>
             </button>`;
         }).join('')}
@@ -67,6 +70,8 @@ export function renderCycle(view, id) {
   const state = c.startsAt <= todayISO() && c.endsAt >= todayISO() ? 'active' : c.startsAt > todayISO() ? 'upcoming' : 'past';
 
   const byStatus = s.statuses.map(st => ({ st, n: list.filter(i => i.status === st.id).length })).filter(x => x.n);
+  const totalPts = list.filter(i => i.estimate).reduce((a, i) => a + i.estimate, 0);
+  const donePts = list.filter(i => ['done', 'canceled'].includes(i.status) && i.estimate).reduce((a, i) => a + i.estimate, 0);
 
   view.innerHTML = `
     <div class="view-inner wide">
@@ -85,6 +90,7 @@ export function renderCycle(view, id) {
         <div class="entity-side">
           <span class="state-chip ${state}">${state === 'active' ? '<i class="pulse"></i>' : ''}${state}</span>
           <span class="progress-num"><b>${closed.length}</b>/${list.length} closed</span>
+          ${totalPts ? `<span class="progress-num mono" title="Completed points / total points">${donePts}/${totalPts} pts</span>` : ''}
           <div class="cycle-bar" style="width:180px">
             ${byStatus.map(({ st, n }) => `<i style="width:${n / Math.max(1, list.length) * 100}%;background:${st.color}" title="${esc(st.name)}"></i>`).join('')}
           </div>

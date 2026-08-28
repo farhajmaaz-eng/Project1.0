@@ -50,6 +50,7 @@ export function issueRowHTML(iss, { showAssignee = true, showStatus = false } = 
       <span class="ir-title">${esc(iss.title || 'Untitled')}</span>
       <span class="ir-labels">${chips}${more}</span>
       <span class="ir-right">
+        ${iss.estimate ? `<span class="key-chip" title="Estimate">${iss.estimate} pt</span>` : ''}
         ${iss.comments?.length ? `<span class="faint mono" style="display:inline-flex;align-items:center;gap:3px">${ico('msg', 11)}${iss.comments.length}</span>` : ''}
         ${dueBadge(iss.due)}
         ${showAssignee ? assigneeAvatar(iss.assignee) : ''}
