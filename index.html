@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="css/editor.css" />
   <link rel="stylesheet" href="css/welcome.css" />
   <link rel="stylesheet" href="css/ai.css" />
+  <link rel="stylesheet" href="css/fx.css" />
 </head>
 <body>
   <!-- boot splash: four tiles assemble into the tessera mark, then part.
@@ -50,7 +51,19 @@
       pointer-events: none;
     }
     [data-theme="light"] #boot { background: #EDEBE0; }
-    .boot-mark { display: grid; grid-template-columns: 22px 22px; gap: 5px; }
+    .boot-mark { position: relative; display: grid; grid-template-columns: 22px 22px; gap: 5px; }
+    /* a comet of light orbits the assembling mark while it works */
+    .boot-mark::before {
+      content: "";
+      position: absolute; inset: -16px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg,
+        transparent 0% 68%, color-mix(in srgb, var(--accent, #C17338) 70%, transparent) 84%, transparent 98%);
+      filter: blur(3px);
+      animation: boot-orbit 1.2s linear infinite;
+      opacity: .9;
+    }
+    @keyframes boot-orbit { to { rotate: 360deg; } }
     .boot-mark i {
       width: 22px; height: 22px;
       border-radius: 6px;

@@ -12,6 +12,7 @@ import { esc, sleep } from './util.js';
 import { ico } from './icons.js';
 import { nav } from './nav.js';
 import { wireRipples, watchSurfaces, reduceMotion } from './motion.js';
+import { initFx } from './fx.js';
 import * as auth from './auth.js';
 
 const viewEl = document.getElementById('view');
@@ -230,6 +231,7 @@ setTimeout(dismissBoot, 4000);
 /* ---------- global motion wiring ---------- */
 wireRipples();
 watchSurfaces();
+initFx();
 
 /* sticky toolbars gain a shadow once their view scrolls */
 let scrollTick = false;

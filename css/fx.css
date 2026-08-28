@@ -1,0 +1,242 @@
+/* ---------------------------------------------------------------------------
+   Tessera · fx v1 — THE OVERDRIVE LAYER.
+   Sits on top of every other sheet and turns the polish up past 11:
+   film grain, vignette, cursor aura, ambient parallax fields, conic
+   light-edge borders, shockwave rings, underline choreography.
+
+   House rules inherited from the rest of the codebase:
+   - every element here is injected by js/fx.js and is pointer-events:none
+   - everything is disabled under prefers-reduced-motion
+   - pointer-follow effects only exist on (hover: hover) and (pointer: fine)
+   - nothing here may create scrollbars, hit targets or layout shifts
+--------------------------------------------------------------------------- */
+
+/* ===========================================================================
+   film grain — a whisper of analog texture over the whole canvas
+   ======================================================================== */
+
+#fx-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 350; /* above app + overlays, below the boot splash (400) */
+  pointer-events: none;
+  opacity: .048;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  animation: fx-grain-jitter 1.6s steps(5, end) infinite;
+}
+[data-theme="light"] #fx-grain { opacity: .055; mix-blend-mode: multiply; }
+
+/* the grain breathes — tiny deterministic jumps, never a smooth crawl */
+@keyframes fx-grain-jitter {
+  0%   { background-position: 0 0; }
+  20%  { background-position: -34px 12px; }
+  40%  { background-position: 22px -30px; }
+  60%  { background-position: -12px 38px; }
+  80%  { background-position: 30px 6px; }
+  100% { background-position: 0 0; }
+}
+
+/* ===========================================================================
+   vignette — the edges of the world fall gently out of focus
+   ======================================================================== */
+
+#fx-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 340;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 100% at 50% 45%, transparent 58%,
+      color-mix(in srgb, #020604 22%, transparent) 100%);
+  opacity: .5;
+}
+[data-theme="light"] #fx-vignette {
+  background:
+    radial-gradient(130% 100% at 50% 45%, transparent 62%,
+      color-mix(in srgb, #2A3028 10%, transparent) 100%);
+}
+
+/* ===========================================================================
+   cursor aura — a lantern the pointer carries (js/fx.js drives position)
+   ======================================================================== */
+
+#fx-aura {
+  position: fixed;
+  left: 0; top: 0;
+  width: 540px; height: 540px;
+  margin: -270px 0 0 -270px;
+  z-index: 0; /* behind the app shell — glows through translucent surfaces */
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--accent) 13%, transparent) 0%,
+    color-mix(in srgb, var(--accent-2) 7%, transparent) 34%,
+    transparent 68%);
+  opacity: 0;
+  transition: opacity .6s ease;
+  will-change: transform;
+}
+body.fx-pointer-live #fx-aura { opacity: 1; }
+[data-theme="light"] #fx-aura {
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--accent) 16%, transparent) 0%,
+    color-mix(in srgb, var(--accent-2) 8%, transparent) 36%,
+    transparent 70%);
+  mix-blend-mode: soft-light;
+}
+
+/* ===========================================================================
+   ambient field — two more color fields that lean toward your cursor
+   (#fx-ambient gets translate from --px/--py; its children self-drift)
+   ======================================================================== */
+
+#fx-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: translate(calc(var(--px, 0) * 26px), calc(var(--py, 0) * 18px));
+  transition: opacity 1s ease;
+  opacity: 0;
+}
+body.fx-pointer-live #fx-ambient { opacity: 1; }
+#fx-ambient i {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(64px);
+}
+#fx-ambient i:nth-child(1) {
+  width: 36vw; height: 36vw;
+  left: 58vw; top: -12vw;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--accent) 9%, transparent), transparent 72%);
+  animation: aurora-b 52s ease-in-out infinite;
+}
+#fx-ambient i:nth-child(2) {
+  width: 30vw; height: 30vw;
+  left: 4vw; bottom: -14vw;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--accent-2) 7%, transparent), transparent 70%);
+  animation: aurora-a 44s ease-in-out infinite reverse;
+}
+
+/* ===========================================================================
+   light edges — a slow conic gleam crawling around floating surfaces
+   ======================================================================== */
+
+@property --fx-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes fx-orbit {
+  to { --fx-angle: 360deg; }
+}
+
+.modal, .palette { position: relative; }
+
+.modal::after,
+.palette::after,
+.drawer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--fx-angle),
+    transparent 0deg,
+    color-mix(in srgb, var(--accent) 62%, transparent) 42deg,
+    transparent 88deg,
+    transparent 196deg,
+    color-mix(in srgb, var(--accent-2) 44%, transparent) 248deg,
+    transparent 304deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  animation: fx-orbit 9s linear infinite;
+  pointer-events: none;
+  opacity: .5;
+}
+[data-theme="light"] .modal::after,
+[data-theme="light"] .palette::after,
+[data-theme="light"] .drawer::after { opacity: .4; }
+
+/* menus are scroll containers — a crawling edge would run away with the
+   content, so they get a static crown light instead */
+.menu {
+  box-shadow: var(--shadow-2), 0 24px 60px -20px rgba(2,3,10,.5),
+    inset 0 1px 0 color-mix(in srgb, #FFFFFF 7%, transparent);
+}
+[data-theme="light"] .menu {
+  box-shadow: var(--shadow-2), 0 24px 60px -20px rgba(2,3,10,.5),
+    inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+/* ===========================================================================
+   shockwave — every deliberate click leaves a ring behind (js/fx.js spawns)
+   ======================================================================== */
+
+.fx-ring {
+  position: fixed;
+  z-index: 998;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 30%, transparent);
+  pointer-events: none;
+  animation: fx-ring .6s var(--ease-out) forwards;
+}
+@keyframes fx-ring {
+  from { opacity: .65; transform: scale(.35); }
+  to   { opacity: 0;   transform: scale(7); }
+}
+
+/* ===========================================================================
+   micro-choreography — links that underline themselves
+   ======================================================================== */
+
+button.linkish, a.linkish {
+  position: relative;
+}
+button.linkish::after, a.linkish::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 1px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .26s var(--ease-out);
+}
+button.linkish:hover::after, a.linkish:hover::after { transform: scaleX(1); }
+
+/* ===========================================================================
+   restraint switches
+   ======================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  #fx-grain,
+  .modal::after,
+  .palette::after,
+  .drawer::after { animation: none; }
+  #fx-aura, #fx-ambient { display: none; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  /* no cursor on touch screens — no lantern, no field */
+  #fx-aura, #fx-ambient { display: none; }
+}
+
+@media (max-width: 900px) {
+  /* match the aurora policy: giant soft layers are a desktop luxury */
+  #fx-grain { display: none; }
+  #fx-vignette { opacity: .3; }
+}
+
